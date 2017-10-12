@@ -1,3 +1,7 @@
 from django.db import models
 
-# Create your models here.
+class DictionaryEntry(models.Model):
+    edict_data = models.CharField(max_length=256)
+
+    def __str__(self):
+        return self.edict_data
