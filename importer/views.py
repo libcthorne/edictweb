@@ -3,7 +3,9 @@ from django.shortcuts import render
 
 from .forms import DictionaryUploadForm
 
-def index(request):
+EDICT2_FILE = 'edict2'
+
+def dictionary_upload(request):
     if request.method == 'GET':
         form = DictionaryUploadForm()
         return render(request, 'importer/index.html', {'form': form})
@@ -11,6 +13,12 @@ def index(request):
     elif request.method == 'POST':
         form = DictionaryUploadForm(request.POST, request.FILES)
         if form.is_valid():
-            return HttpResponse("Valid form data: %s" % request.FILES['dictionary_file'])
+            source_file = request.FILES['dictionary_file']
+
+            with open(EDICT2_FILE, 'wb') as destination_file:
+                for chunk in source_file.chunks():
+                    destination_file.write(chunk)
+
+            return HttpResponse("Dictionary uploaded")
         else:
             return HttpResponse("Invalid form data")

@@ -5,5 +5,5 @@ from . import views
 app_name = 'importer'
 
 urlpatterns = [
-    url(r'^$', views.index, name='index'),
+    url(r'^$', views.dictionary_upload, name='dictionary_upload'),
 ]
