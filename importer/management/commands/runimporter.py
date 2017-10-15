@@ -1,3 +1,4 @@
+import threading
 import time
 
 from django.core.management.base import BaseCommand
@@ -16,15 +17,21 @@ class Command(BaseCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.active_task_id = None
+        self.task_lock = threading.Lock()
 
     def handle(self, *args, **kwargs):
         while True:
             task_id = self.get_pending_task()
 
             if task_id != self.active_task_id:
-                active_task_id = task_id # interrupt current task
-                task_lock.acquire() # wait for current task to stop
-                task_thread = Thread(self.run_task)
+                # interrupt current task
+                self.active_task_id = task_id
+
+                # wait for current task to stop
+                self.task_lock.acquire()
+
+                # start new task thread
+                task_thread = threading.Thread(target=self.run_task, args=(task_id,))
                 task_thread.start()
             else:
                 self.stdout.write("No new task")
@@ -39,20 +46,21 @@ class Command(BaseCommand):
         except DictionaryImportRequest.DoesNotExist:
             pass
 
-    def run_task(task_id):
+    def run_task(self, task_id):
         self.stdout.write("Deleting existing dictionary entries")
         DictionaryEntry.objects.all().delete()
 
         self.stdout.write("Starting dictionary file import")
 
-        with open(filename, 'r', encoding='euc-jp') as f:
+        with open(DICTIONARY_FILE, 'r', encoding='euc-jp') as f:
             header_line = f.readline()
 
             for entry_line in f:
                 entry = DictionaryEntry(edict_data=entry_line)
                 entry.save()
 
-                if active_task_id != task_id:
+                if self.active_task_id != task_id:
+                    self.stdout.write("Task interrupted")
                     break # interrupt task
 
                 # set progress
@@ -62,4 +70,4 @@ class Command(BaseCommand):
 
         self.stdout.write("Finished dictionary file import")
 
-        task_lock.release()
+        self.task_lock.release()
