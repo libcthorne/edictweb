@@ -56,12 +56,12 @@ class Command(BaseCommand):
             header_line = f.readline()
 
             for entry_line in f:
-                entry = DictionaryEntry(edict_data=entry_line)
-                entry.save()
-
                 if self.last_requested_task_id != task_id:
                     self.stdout.write("Task interrupted")
                     break # interrupt task
+
+                entry = DictionaryEntry(edict_data=entry_line)
+                entry.save()
 
                 # set progress
             else:
