@@ -7,4 +7,4 @@ class DictionaryEntry(models.Model):
         return self.edict_data
 
 class DictionaryImportRequest(models.Model):
-    pass
+    completed = models.BooleanField(default=False)
