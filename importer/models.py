@@ -5,3 +5,6 @@ class DictionaryEntry(models.Model):
 
     def __str__(self):
         return self.edict_data
+
+class DictionaryImportRequest(models.Model):
+    pass
