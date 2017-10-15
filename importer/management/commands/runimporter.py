@@ -2,7 +2,10 @@ import time
 
 from django.core.management.base import BaseCommand
 
-from importer.models import DictionaryEntry
+from importer.models import (
+    DictionaryEntry,
+    DictionaryImportRequest,
+)
 
 DICTIONARY_FILE = 'edict2'
 TASK_POLL_INTERVAL = 5
@@ -16,7 +19,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         while True:
-            task_id = self.check_for_pending_task()
+            task_id = self.get_pending_task()
 
             if task_id != self.active_task_id:
                 active_task_id = task_id # interrupt current task
@@ -28,8 +31,13 @@ class Command(BaseCommand):
 
             time.sleep(TASK_POLL_INTERVAL)
 
-    def check_for_pending_task(self):
-        return None
+    def get_pending_task(self):
+        try:
+            latest_task = DictionaryImportRequest.objects.latest('id')
+            if not latest_task.completed:
+                return latest_task.id
+        except DictionaryImportRequest.DoesNotExist:
+            pass
 
     def run_task(task_id):
         self.stdout.write("Deleting existing dictionary entries")
