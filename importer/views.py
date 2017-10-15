@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 
 from .forms import DictionaryUploadForm
-from .tasks import import_dictionary_file
+from .tasks import start_dictionary_import
 
 EDICT2_FILE = 'edict2'
 
@@ -20,7 +20,7 @@ def dictionary_upload(request):
                 for chunk in source_file.chunks():
                     destination_file.write(chunk)
 
-            import_dictionary_file(EDICT2_FILE)
+            start_dictionary_import()
 
             return HttpResponse("Dictionary uploaded")
         else:
