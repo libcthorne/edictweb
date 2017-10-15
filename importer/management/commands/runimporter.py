@@ -16,16 +16,16 @@ class Command(BaseCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.active_task_id = None
+        self.last_requested_task_id = None
         self.task_lock = threading.Lock()
 
     def handle(self, *args, **kwargs):
         while True:
             task_id = self.get_pending_task()
 
-            if task_id != self.active_task_id:
+            if task_id != self.last_requested_task_id:
                 # interrupt current task
-                self.active_task_id = task_id
+                self.last_requested_task_id = task_id
 
                 # wait for current task to stop
                 self.task_lock.acquire()
@@ -59,7 +59,7 @@ class Command(BaseCommand):
                 entry = DictionaryEntry(edict_data=entry_line)
                 entry.save()
 
-                if self.active_task_id != task_id:
+                if self.last_requested_task_id != task_id:
                     self.stdout.write("Task interrupted")
                     break # interrupt task
 
