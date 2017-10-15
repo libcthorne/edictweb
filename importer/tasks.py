@@ -1,3 +1,5 @@
+from .models import DictionaryImportRequest
+
 def start_dictionary_import():
-    # write task to db
-    pass
+    request = DictionaryImportRequest()
+    request.save()
