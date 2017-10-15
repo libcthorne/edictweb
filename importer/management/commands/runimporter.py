@@ -65,8 +65,12 @@ class Command(BaseCommand):
 
                 # set progress
             else:
-                # set done
-                pass
+                try:
+                    request = DictionaryImportRequest.objects.get(id=task_id)
+                    request.completed = True
+                    request.save()
+                except DictionaryImportRequest.DoesNotExist:
+                    pass
 
         self.stdout.write("Finished dictionary file import")
 
