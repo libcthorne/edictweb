@@ -77,11 +77,12 @@ WSGI_APPLICATION = 'edictweb.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        'OPTIONS': {
-            'timeout': 10,
-        }
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'edictweb',
+        'USER': 'django',
+        'PASSWORD': 'django',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
     }
 }
 

@@ -1,0 +1,25 @@
+---
+- hosts: all
+  sudo: yes
+  tasks:
+  - name: Install postgresql
+    apt: name={{item}} state=present
+    with_items:
+      - postgresql
+      - postgresql-contrib
+      - python-psycopg2
+
+  - name: Create a new database with name "edictweb"
+    postgresql_db:
+      name: edictweb
+    become: true
+    become_user: postgres
+
+  - name: Create django postgres user
+    postgresql_user:
+      db: edictweb
+      name: django
+      password: django
+      priv: ALL
+    become: true
+    become_user: postgres
