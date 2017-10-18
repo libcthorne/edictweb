@@ -7,4 +7,7 @@ class DictionaryEntry(models.Model):
         return self.edict_data
 
 class DictionaryImportRequest(models.Model):
+    started = models.BooleanField(default=False)
     completed = models.BooleanField(default=False)
+    interrupted = models.BooleanField(default=False)
+    total_entries_count = models.PositiveIntegerField(default=0)
