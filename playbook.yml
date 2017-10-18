@@ -46,3 +46,8 @@
       priv: ALL
     become: true
     become_user: postgres
+
+  - name: Add startup command
+    lineinfile:
+      path: /home/vagrant/.bashrc
+      line: 'source /home/vagrant/env/bin/activate && cd /vagrant'
