@@ -104,4 +104,4 @@ class Command(BaseCommand):
                 request.completed = True
                 request.save()
 
-        self.stdout.write("Finished dictionary file import")
+        self.stdout.write("[Task %d] Finished dictionary file import" % task_id)
