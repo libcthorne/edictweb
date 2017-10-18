@@ -1,7 +1,7 @@
 from django.db import models
 
 class DictionaryEntry(models.Model):
-    edict_data = models.CharField(max_length=512)
+    edict_data = models.CharField(max_length=2048)
 
     def __str__(self):
         return self.edict_data
