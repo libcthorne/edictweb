@@ -10,9 +10,4 @@ urlpatterns = [
         views.dictionary_upload,
         name='dictionary-upload'
     ),
-    url(
-        r'^progress/(?P<import_request_id>[0-9]+)$',
-        views.dictionary_import_progress,
-        name='dictionary-import-progress'
-    )
 ]
