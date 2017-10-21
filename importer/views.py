@@ -1,3 +1,4 @@
+from django import forms
 from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import (
@@ -22,7 +23,7 @@ def dictionary_upload(request):
             current_entries_count = DictionaryEntry.objects.filter(source_import_request=pending_import_request.import_request).count()
             total_entries_count = pending_import_request.import_request.total_entries_count
             progress = (current_entries_count/max(total_entries_count, 1))*100
-            return HttpResponse("Import in progress (%.2f%%) (cancel?)" % progress)
+            return HttpResponse("Import in progress (%.2f%%) (<a href='cancel'>cancel?</a>)" % progress)
 
         # No task running
         form = DictionaryUploadForm()
@@ -51,3 +52,15 @@ def dictionary_upload(request):
                 return redirect('importer:dictionary-upload')
         else:
             return HttpResponse("Invalid form data")
+
+def import_cancel(request):
+    if request.method == 'GET':
+        form = forms.Form()
+        return render(request, 'importer/cancel.html', {'form': form})
+    elif request.method == 'POST':
+        with transaction.atomic():
+            pending_import_request = PendingDictionaryImportRequest.objects.select_for_update().first()
+            if pending_import_request.import_request_id and pending_import_request.import_request.delete():
+                return HttpResponse("Import cancelled")
+
+            return HttpResponse("Import currently not running")

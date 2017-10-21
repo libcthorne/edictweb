@@ -10,4 +10,9 @@ urlpatterns = [
         views.dictionary_upload,
         name='dictionary-upload'
     ),
+    url(
+        r'^cancel$',
+        views.import_cancel,
+        name='import-cancel'
+    ),
 ]
