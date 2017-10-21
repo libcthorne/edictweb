@@ -1,71 +1,48 @@
 import codecs
-import threading
 import time
 
 from django.core.management.base import BaseCommand
+from django.db import IntegrityError
 
 from importer.models import (
     DictionaryEntry,
     DictionaryImportRequest,
+    PendingDictionaryImportRequest,
 )
 
 DICTIONARY_FILE = 'edict2'
-TASK_POLL_INTERVAL = 5
+IMPORT_REQUEST_POLL_INTERVAL = 5
 
 class Command(BaseCommand):
     help = 'Polls for and processes dictionary import requests'
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.last_requested_task_id = None
-        self.task_lock = threading.Lock()
-
     def handle(self, *args, **kwargs):
         while True:
-            task_id = self.get_pending_task()
-
-            if task_id != self.last_requested_task_id:
-                # interrupt current task
-                self.last_requested_task_id = task_id
-
-                # wait for current task to stop
-                self.task_lock.acquire()
-
-                # start new task thread
-                task_thread = threading.Thread(target=self.start_task, args=(task_id,))
-                task_thread.start()
+            import_request_id = self.get_pending_import_request_id()
+            if import_request_id:
+                try:
+                    self.process_import_request(import_request_id)
+                except (DictionaryImportRequest.DoesNotExist, IntegrityError) as e:
+                    self.stdout.write("[Request %d] Import request interrupted" % import_request_id)
             else:
-                self.stdout.write("No new task")
+                self.stdout.write("No pending import request")
 
-            time.sleep(TASK_POLL_INTERVAL)
+            time.sleep(IMPORT_REQUEST_POLL_INTERVAL)
 
-    def get_pending_task(self):
-        try:
-            latest_task = DictionaryImportRequest.objects.latest('id')
-            if not latest_task.completed:
-                return latest_task.id
-        except DictionaryImportRequest.DoesNotExist:
-            pass
+    def get_pending_import_request_id(self):
+        return PendingDictionaryImportRequest.objects.first().import_request_id
 
-    def start_task(self, task_id):
-        try:
-            self.run_task(task_id)
-        except DictionaryImportRequest.DoesNotExist:
-            pass
-
-        self.task_lock.release()
-
-    def run_task(self, task_id):
+    def process_import_request(self, import_request_id):
         # Mark request as started
-        request = DictionaryImportRequest.objects.get(id=task_id)
-        request.started = True
-        request.save()
+        import_request = DictionaryImportRequest.objects.get(id=import_request_id)
+        import_request.started = True
+        import_request.save()
 
         # Remove existing dictionary entries
-        self.stdout.write("[Task %d] Deleting existing dictionary entries" % task_id)
+        self.stdout.write("[Request %d] Deleting existing dictionary entries" % import_request_id)
         DictionaryEntry.objects.all().delete()
 
-        self.stdout.write("[Task %d] Starting dictionary file import" % task_id)
+        self.stdout.write("[Request %d] Starting dictionary file import" % import_request_id)
 
         # Read and save new dictionary entries
         with codecs.open(DICTIONARY_FILE, 'r', encoding='euc-jp') as f:
@@ -75,33 +52,30 @@ class Command(BaseCommand):
             # Count and save total number of entries
             first_entry_pos = f.tell()
             total_entry_lines = sum(1 for l in f)
-            request = DictionaryImportRequest.objects.get(id=task_id)
-            request.total_entries_count = total_entry_lines
-            request.save()
+            import_request = DictionaryImportRequest.objects.get(id=import_request_id)
+            import_request.total_entries_count = total_entry_lines
+            import_request.save()
 
             # Read entry lines
             f.seek(first_entry_pos)
             for entry_index, entry_line in enumerate(f):
-                # Check if task should still be running
-                if self.last_requested_task_id != task_id:
-                    self.stdout.write("[Task %d] Task interrupted" % task_id)
-                    request = DictionaryImportRequest.objects.get(id=task_id)
-                    request.interrupted = True
-                    request.save()
-                    break # interrupt task
-
                 # Create and save new entry
-                entry = DictionaryEntry(edict_data=entry_line)
+                entry = DictionaryEntry(edict_data=entry_line, source_import_request=import_request)
                 entry.save()
-                self.stdout.write("[Task %d] Saved %d/%d entry lines" % (task_id, entry_index+1, total_entry_lines))
+                self.stdout.write("[Request %d] Saved %d/%d entry lines" % (import_request_id, entry_index+1, total_entry_lines))
 
                 # Log progress
                 progress = (entry_index+1)/total_entry_lines
-                self.stdout.write("[Task %d] Progress: %.2f%%" % (task_id, progress*100))
+                self.stdout.write("[Request %d] Progress: %.2f%%" % (import_request_id, progress*100))
             else:
-                # Task finished, mark as completed
-                request = DictionaryImportRequest.objects.get(id=task_id)
-                request.completed = True
-                request.save()
+                # Request finished, mark as completed
+                import_request = DictionaryImportRequest.objects.get(id=import_request_id)
+                import_request.completed = True
+                import_request.save()
 
-        self.stdout.write("[Task %d] Finished dictionary file import" % task_id)
+                # Unmark import request as pending
+                pending_import_request = PendingDictionaryImportRequest.objects.get(import_request=import_request)
+                pending_import_request.import_request = None
+                pending_import_request.save()
+
+        self.stdout.write("[Request %d] Finished dictionary file import" % import_request_id)
