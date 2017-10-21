@@ -6,6 +6,7 @@ from django.shortcuts import (
     redirect,
     render,
 )
+from django.views import View
 
 from .forms import DictionaryUploadForm
 from .models import (
@@ -16,8 +17,8 @@ from .models import (
 
 EDICT2_FILE = 'edict2'
 
-def dictionary_upload(request):
-    if request.method == 'GET':
+class DictionaryImport(View):
+    def get(self, request):
         pending_import_request = PendingDictionaryImportRequest.objects.select_related('import_request').first()
         if pending_import_request.import_request:
             current_entries_count = DictionaryEntry.objects.filter(source_import_request=pending_import_request.import_request).count()
@@ -29,7 +30,7 @@ def dictionary_upload(request):
         form = DictionaryUploadForm()
         return render(request, 'importer/index.html', {'form': form})
 
-    elif request.method == 'POST':
+    def post(self, request):
         form = DictionaryUploadForm(request.POST, request.FILES)
         if form.is_valid():
             with transaction.atomic():
@@ -49,15 +50,16 @@ def dictionary_upload(request):
                 pending_import_request.import_request = import_request
                 pending_import_request.save()
 
-                return redirect('importer:dictionary-upload')
+                return redirect('importer:dictionary-import')
         else:
             return HttpResponse("Invalid form data")
 
-def import_cancel(request):
-    if request.method == 'GET':
+class DictionaryImportCancel(View):
+    def get(self, request):
         form = forms.Form()
         return render(request, 'importer/cancel.html', {'form': form})
-    elif request.method == 'POST':
+
+    def post(self, request):
         with transaction.atomic():
             pending_import_request = PendingDictionaryImportRequest.objects.select_for_update().first()
             if pending_import_request.import_request_id and pending_import_request.import_request.delete():

@@ -7,12 +7,12 @@ app_name = 'importer'
 urlpatterns = [
     url(
         r'^$',
-        views.dictionary_upload,
-        name='dictionary-upload'
+        views.DictionaryImport.as_view(),
+        name='dictionary-import'
     ),
     url(
         r'^cancel$',
-        views.import_cancel,
-        name='import-cancel'
+        views.DictionaryImportCancel.as_view(),
+        name='dictionary-import-cancel'
     ),
 ]
