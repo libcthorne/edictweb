@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import (
@@ -6,6 +7,7 @@ from django.shortcuts import (
     redirect,
     render,
 )
+from django.utils.decorators import method_decorator
 from django.views import View
 
 from .forms import DictionaryUploadForm
@@ -17,6 +19,7 @@ from .models import (
 
 EDICT2_FILE = 'edict2'
 
+@method_decorator(login_required, name='dispatch')
 class DictionaryImport(View):
     def get(self, request):
         pending_import_request = PendingDictionaryImportRequest.objects.select_related('import_request').first()
@@ -54,6 +57,7 @@ class DictionaryImport(View):
         else:
             return HttpResponse("Invalid form data")
 
+@method_decorator(login_required, name='dispatch')
 class DictionaryImportCancel(View):
     def get(self, request):
         form = forms.Form()
