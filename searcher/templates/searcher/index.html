@@ -1,16 +1,20 @@
-<h1>Welcome to edictweb</h1>
+{% extends 'base.html' %}
 
-{% if entries.has_previous %}
-  <a href='?page={{ entries.previous_page_number}}'>Previous</a>
-{% endif %}
+{% block body %}
+	<h1>Welcome to edictweb</h1>
 
-{% if entries.has_next %}
-  <a href='?page={{ entries.next_page_number}}'>Next</a>
-{% endif %}
+	{% if entries.has_previous %}
+		<a href='?page={{ entries.previous_page_number}}'>Previous</a>
+	{% endif %}
 
-<br/><br/>
+	{% if entries.has_next %}
+		<a href='?page={{ entries.next_page_number}}'>Next</a>
+	{% endif %}
 
-{% for entry in entries %}
-  {{ entry.edict_data }}
-  <br/>
-{% endfor %}
+	<br/><br/>
+
+	{% for entry in entries %}
+		{{ entry.edict_data }}
+		<br/>
+	{% endfor %}
+{% endblock %}
