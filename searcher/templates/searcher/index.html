@@ -3,18 +3,24 @@
 {% block body %}
 	<h1>Welcome to edictweb</h1>
 
+	<form action="" method="post">
+		{% csrf_token %}
+	  {{ form }}
+		<input type="submit" value="Search" />
+	</form>
+
 	{% if entries.has_previous %}
-		<a href='?page={{ entries.previous_page_number}}'>Previous</a>
+		<a href='?query={{ request.GET.query }}&page={{ entries.previous_page_number}}'>Previous</a>
 	{% endif %}
 
 	{% if entries.has_next %}
-		<a href='?page={{ entries.next_page_number}}'>Next</a>
+		<a href='?query={{ request.GET.query }}&page={{ entries.next_page_number}}'>Next</a>
 	{% endif %}
 
 	<br/><br/>
 
 	{% for entry in entries %}
-		{{ entry.edict_data }}
+		* {{ entry.edict_data }}
 		<br/>
 	{% endfor %}
 {% endblock %}
