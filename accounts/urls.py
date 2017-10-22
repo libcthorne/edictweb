@@ -1,11 +1,11 @@
 from django.conf.urls import url
-from django.contrib.auth import views as auth_views
 
 from . import views
 
 app_name = 'accounts'
 
 urlpatterns = [
-    url(r'^login', auth_views.login),
-    url(r'^logout', auth_views.logout),
+    url(r'^login', views.LoginView.as_view(), name='login'),
+    url(r'^logout', views.LogoutView.as_view(), name='logout'),
+    url(r'^register', views.RegistrationView.as_view(), name='register'),
 ]

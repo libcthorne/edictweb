@@ -125,3 +125,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+# Auth settings
+
+# Where to redirect to after login if a 'next' parameter isn't present
+LOGIN_REDIRECT_URL = '/'
