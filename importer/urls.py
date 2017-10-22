@@ -5,14 +5,6 @@ from . import views
 app_name = 'importer'
 
 urlpatterns = [
-    url(
-        r'^$',
-        views.DictionaryImport.as_view(),
-        name='dictionary-import'
-    ),
-    url(
-        r'^cancel$',
-        views.DictionaryImportCancel.as_view(),
-        name='dictionary-import-cancel'
-    ),
+    url(r'^(?:import/)?$', views.DictionaryImport.as_view(), name='import'),
+    url(r'^cancel$', views.DictionaryImportCancel.as_view(), name='cancel'),
 ]

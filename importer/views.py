@@ -22,40 +22,46 @@ EDICT2_FILE = 'edict2'
 @method_decorator(login_required, name='dispatch')
 class DictionaryImport(View):
     def get(self, request):
-        pending_import_request = PendingDictionaryImportRequest.objects.select_related('import_request').first()
+        pending_import_request = PendingDictionaryImportRequest.objects.\
+                                 select_related('import_request').first()
+
         if pending_import_request.import_request:
-            current_entries_count = DictionaryEntry.objects.filter(source_import_request=pending_import_request.import_request).count()
+            # Import already running
+            current_entries_count = DictionaryEntry.objects.\
+                                    filter(source_import_request=pending_import_request.import_request).\
+                                    count()
             total_entries_count = pending_import_request.import_request.total_entries_count
             progress = (current_entries_count/max(total_entries_count, 1))*100
-            return HttpResponse("Import in progress (%.2f%%) (<a href='cancel'>cancel?</a>)" % progress)
-
-        # No task running
-        form = DictionaryUploadForm()
-        return render(request, 'importer/index.html', {'form': form})
+            return render(request, 'importer/progress.html', {'progress': progress})
+        else:
+            # No import currently running
+            form = DictionaryUploadForm()
+            return render(request, 'importer/upload.html', {'form': form})
 
     def post(self, request):
         form = DictionaryUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            with transaction.atomic():
-                pending_import_request = PendingDictionaryImportRequest.objects.select_for_update().first()
-                if pending_import_request.import_request_id:
-                    return HttpResponse("Import already in progress")
+        if not form.is_valid():
+            return render(request, 'importer/upload.html', {'form': form})
 
-                source_file = request.FILES['dictionary_file']
+        with transaction.atomic():
+            pending_import_request = PendingDictionaryImportRequest.objects.select_for_update().first()
+            if pending_import_request.import_request_id:
+                return HttpResponse("Import already in progress")
 
-                with open(EDICT2_FILE, 'wb') as destination_file:
-                    for chunk in source_file.chunks():
-                        destination_file.write(chunk)
+            source_file = request.FILES['dictionary_file']
 
-                import_request = DictionaryImportRequest()
-                import_request.save()
+            with open(EDICT2_FILE, 'wb') as destination_file:
+                for chunk in source_file.chunks():
+                    destination_file.write(chunk)
 
-                pending_import_request.import_request = import_request
-                pending_import_request.save()
+            import_request = DictionaryImportRequest()
+            import_request.save()
 
-                return redirect('importer:dictionary-import')
-        else:
-            return HttpResponse("Invalid form data")
+            pending_import_request.import_request = import_request
+            pending_import_request.save()
+
+            return redirect('importer:import')
+
 
 @method_decorator(login_required, name='dispatch')
 class DictionaryImportCancel(View):
@@ -67,6 +73,6 @@ class DictionaryImportCancel(View):
         with transaction.atomic():
             pending_import_request = PendingDictionaryImportRequest.objects.select_for_update().first()
             if pending_import_request.import_request_id and pending_import_request.import_request.delete():
-                return HttpResponse("Import cancelled")
-
-            return HttpResponse("Import currently not running")
+                return redirect('importer:import')
+            else:
+                return HttpResponse("Import not running")
