@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import (
@@ -19,7 +19,9 @@ from .models import (
 
 EDICT2_FILE = 'edict2'
 
-@method_decorator(login_required, name='dispatch')
+user_is_staff = user_passes_test(lambda u: u.is_staff, login_url='accounts:staff-login-prompt')
+
+@method_decorator(user_is_staff, name='dispatch')
 class DictionaryImport(View):
     def get(self, request):
         pending_import_request = PendingDictionaryImportRequest.objects.\
@@ -63,7 +65,7 @@ class DictionaryImport(View):
             return redirect('importer:import')
 
 
-@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_staff, name='dispatch')
 class DictionaryImportCancel(View):
     def get(self, request):
         form = forms.Form()
