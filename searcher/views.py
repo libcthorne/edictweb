@@ -8,7 +8,7 @@ from django.shortcuts import render
 from importer.models import DictionaryEntry
 
 def index(request):
-    all_entries = DictionaryEntry.objects.all()
+    all_entries = DictionaryEntry.objects.all().order_by('id')
     paginator = Paginator(all_entries, per_page=20)
 
     page = request.GET.get('page')
