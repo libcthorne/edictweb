@@ -15,7 +15,10 @@ from django.shortcuts import (
 )
 from django.views import View
 
-from importer.models import DictionaryEntry
+from importer.models import (
+    DictionaryEntry,
+    InvertedIndexWord,
+)
 from .forms import SearchForm
 
 class SearchView(View):
@@ -27,10 +30,12 @@ class SearchView(View):
         query = form.cleaned_data['query']
         if not query:
             matching_entries = DictionaryEntry.objects.all()
+            matching_entries = matching_entries.order_by('id')
         else:
-            matching_entries = DictionaryEntry.objects.filter(edict_data__icontains=query)
+            normalized_words = [InvertedIndexWord.normalize(word) for word in query.split(' ')]
+            matching_entries = DictionaryEntry.objects.filter(invertedindexentry__index_word__word__in=normalized_words).\
+                               distinct().order_by('id')
 
-        matching_entries = matching_entries.order_by('id')
         paginator = Paginator(matching_entries, per_page=20)
 
         page = request.GET.get('page')
