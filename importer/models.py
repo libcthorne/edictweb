@@ -40,7 +40,7 @@ def post_save(sender, instance, **kwargs):
 
         inverted_index_word, _ = InvertedIndexWord.objects.get_or_create(word=word)
         inverted_index_entry = InvertedIndexEntry(
-            word=inverted_index_word,
+            index_word=inverted_index_word,
             dictionary_entry=instance,
             start_position=start_position,
         )
@@ -66,7 +66,7 @@ class InvertedIndexWord(models.Model):
         return self.word
 
 class InvertedIndexEntry(models.Model):
-    word = models.ForeignKey(InvertedIndexWord, on_delete=models.CASCADE, related_name='entries')
+    index_word = models.ForeignKey(InvertedIndexWord, on_delete=models.CASCADE, related_name='entries')
     dictionary_entry = models.ForeignKey(DictionaryEntry, on_delete=models.CASCADE)
     start_position = models.PositiveIntegerField()
 
