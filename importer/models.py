@@ -77,4 +77,4 @@ class InvertedIndexEntry(models.Model):
     start_position = models.PositiveIntegerField()
 
     def __str__(self):
-        return "Index of '{}' for {}".format(self.word, self.dictionary_entry)
+        return "Index of '{}' for {}".format(self.index_word, self.dictionary_entry)
