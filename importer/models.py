@@ -36,15 +36,17 @@ def post_save(sender, instance, **kwargs):
         if not word:
             continue # word is not indexable
 
-        print("Indexing %s under %s (start:%d)" % (edict_data, word, start_position))
-
-        inverted_index_word, _ = InvertedIndexWord.objects.get_or_create(word=word)
-        inverted_index_entry = InvertedIndexEntry(
-            index_word=inverted_index_word,
-            dictionary_entry=instance,
-            start_position=start_position,
-        )
-        inverted_index_entry.save()
+        # Index each edge n-gram (i.e. quick -> q, qu, qui, quic, quick)
+        for i in range(len(word)):
+            word_ngram = word[:i+1]
+            print("Indexing %s under %s (start:%d)" % (edict_data, word_ngram, start_position))
+            inverted_index_word, _ = InvertedIndexWord.objects.get_or_create(word=word_ngram)
+            inverted_index_entry = InvertedIndexEntry(
+                index_word=inverted_index_word,
+                dictionary_entry=instance,
+                start_position=start_position,
+            )
+            inverted_index_entry.save()
 
 class InvertedIndexWord(models.Model):
     word = models.CharField(max_length=128)
