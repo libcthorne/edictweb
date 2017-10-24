@@ -27,7 +27,7 @@ class DictionaryEntry(models.Model):
 
 @receiver(post_save, sender=DictionaryEntry)
 def post_save(sender, instance, **kwargs):
-    edict_data = str(instance.edict_data)
+    edict_data = str(instance.edict_data).replace(';', ' ').replace('/', ' ')
 
     # Index entry words
     for word in edict_data.split(' '):
