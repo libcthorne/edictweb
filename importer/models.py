@@ -1,3 +1,4 @@
+import re
 import string
 import unicodedata
 
@@ -27,24 +28,34 @@ class DictionaryEntry(models.Model):
 
 @receiver(post_save, sender=DictionaryEntry)
 def post_save(sender, instance, **kwargs):
-    edict_data = InvertedIndexWord.normalize_query(str(instance.edict_data))
+    raw_edict_data = str(instance.edict_data)
+    edict_data = InvertedIndexWord.normalize_query(raw_edict_data)
 
     # Index entry words
-    for word in edict_data.split(' '):
-        start_position = edict_data.index(word)
-        word = InvertedIndexWord.normalize_word(word)
+
+    # keep track of the previous word's start_position to enable
+    # correct search of start_position for words contained in data
+    # more than once
+    prev_start_position = -1
+
+    for raw_word in edict_data.split(' '):
+        start_position = raw_edict_data.index(raw_word, prev_start_position+1)
+        prev_start_position = start_position
+        word = InvertedIndexWord.normalize_word(raw_word)
         if not word:
             continue # word is not indexable
 
         # Index each edge n-gram (i.e. quick -> q, qu, qui, quic, quick)
         for i in range(len(word)):
             word_ngram = word[:i+1]
-            print("Indexing %s under %s (start:%d)" % (edict_data, word_ngram, start_position))
+            end_position = start_position+len(word_ngram)
+            print("Indexing %s under %s (start:%d, end:%d)" % (edict_data, word_ngram, start_position, end_position))
             inverted_index_word, _ = InvertedIndexWord.objects.get_or_create(word=word_ngram)
             inverted_index_entry = InvertedIndexEntry(
                 index_word=inverted_index_word,
                 dictionary_entry=instance,
                 start_position=start_position,
+                end_position=end_position,
             )
             inverted_index_entry.save()
 
@@ -53,7 +64,7 @@ class InvertedIndexWord(models.Model):
 
     @staticmethod
     def normalize_query(query):
-        return query.replace(';', ' ').replace('/', ' ')
+        return re.sub(r'[;/()\[\[]', ' ', query)
 
     @staticmethod
     def normalize_word(word):
@@ -75,6 +86,7 @@ class InvertedIndexEntry(models.Model):
     index_word = models.ForeignKey(InvertedIndexWord, on_delete=models.CASCADE, related_name='entries')
     dictionary_entry = models.ForeignKey(DictionaryEntry, on_delete=models.CASCADE)
     start_position = models.PositiveIntegerField()
+    end_position = models.PositiveIntegerField()
 
     def __str__(self):
         return "Index of '{}' for {}".format(self.index_word, self.dictionary_entry)

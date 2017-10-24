@@ -1,9 +1,16 @@
+from collections import defaultdict
+
 from django.core.paginator import (
     EmptyPage,
     PageNotAnInteger,
     Paginator,
 )
-from django.db.models import Count, IntegerField, Value
+from django.db.models import (
+    Count,
+    F,
+    IntegerField,
+    Value,
+)
 from django.http import (
     Http404,
     HttpResponse,
@@ -18,6 +25,7 @@ from django.views import View
 
 from importer.models import (
     DictionaryEntry,
+    InvertedIndexEntry,
     InvertedIndexWord,
 )
 from .forms import SearchForm
@@ -40,6 +48,32 @@ class SearchView(View):
             matching_entries = DictionaryEntry.objects.filter(invertedindexentry__index_word__word__in=normalized_words).\
                                annotate(num_matches=Count('id')).\
                                order_by('-num_matches', 'id')
+
+            # Highlight text match positions
+
+            match_positions = InvertedIndexEntry.objects.filter(index_word__word__in=normalized_words).\
+                              order_by('dictionary_entry_id', 'start_position', 'end_position').\
+                              annotate(word=F('index_word__word'))
+
+            match_positions_for_entry = defaultdict(list)
+            for match_position in match_positions:
+                match_positions_for_entry[match_position.dictionary_entry_id].append({
+                    'word': match_position.word,
+                    'start_position': match_position.start_position,
+                    'end_position': match_position.end_position,
+                })
+
+            for matching_entry in matching_entries:
+                additional_offset = 0
+                for match_position in match_positions_for_entry[matching_entry.id]:
+                    match_start = match_position['start_position'] + additional_offset
+                    match_end = match_position['end_position'] + additional_offset
+                    matching_entry.edict_data = matching_entry.edict_data[:match_start] + \
+                                                '**' + \
+                                                match_position['word'] + \
+                                                '**' + \
+                                                matching_entry.edict_data[match_end:]
+                    additional_offset += len('****')
 
         paginator = Paginator(matching_entries, per_page=20)
 
