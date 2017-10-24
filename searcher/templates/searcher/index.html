@@ -20,7 +20,11 @@
 	<br/><br/>
 
 	{% for entry in entries %}
-		* {{ entry.edict_data }}
+		{% if entry.num_matches > 0 %}
+			* ({{ entry.num_matches }} matches) {{ entry.edict_data }}
+		{% else %}
+			* {{ entry.edict_data }}
+		{% endif %}
 		<br/>
 	{% endfor %}
 {% endblock %}

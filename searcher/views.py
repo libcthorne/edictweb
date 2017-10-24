@@ -3,6 +3,7 @@ from django.core.paginator import (
     PageNotAnInteger,
     Paginator,
 )
+from django.db.models import Count, IntegerField, Value
 from django.http import (
     Http404,
     HttpResponse,
@@ -30,11 +31,15 @@ class SearchView(View):
         query = form.cleaned_data['query']
         if not query:
             matching_entries = DictionaryEntry.objects.all()
-            matching_entries = matching_entries.order_by('id')
+            matching_entries = matching_entries.\
+                               annotate(num_matches=Value(0, IntegerField())).\
+                               order_by('id')
+
         else:
             normalized_words = [InvertedIndexWord.normalize(word) for word in query.split(' ')]
             matching_entries = DictionaryEntry.objects.filter(invertedindexentry__index_word__word__in=normalized_words).\
-                               distinct().order_by('id')
+                               annotate(num_matches=Count('id')).\
+                               order_by('-num_matches', 'id')
 
         paginator = Paginator(matching_entries, per_page=20)
 
