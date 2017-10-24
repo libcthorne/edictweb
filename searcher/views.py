@@ -28,7 +28,7 @@ class SearchView(View):
         if not form.is_valid():
             return HttpResponseBadRequest("Invalid form data")
 
-        query = form.cleaned_data['query']
+        query = InvertedIndexWord.normalize_query(form.cleaned_data['query'])
         if not query:
             matching_entries = DictionaryEntry.objects.all()
             matching_entries = matching_entries.\
@@ -36,7 +36,7 @@ class SearchView(View):
                                order_by('id')
 
         else:
-            normalized_words = [InvertedIndexWord.normalize(word) for word in query.split(' ')]
+            normalized_words = [InvertedIndexWord.normalize_word(word) for word in query.split(' ')]
             matching_entries = DictionaryEntry.objects.filter(invertedindexentry__index_word__word__in=normalized_words).\
                                annotate(num_matches=Count('id')).\
                                order_by('-num_matches', 'id')

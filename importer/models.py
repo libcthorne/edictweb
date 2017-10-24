@@ -27,12 +27,12 @@ class DictionaryEntry(models.Model):
 
 @receiver(post_save, sender=DictionaryEntry)
 def post_save(sender, instance, **kwargs):
-    edict_data = str(instance.edict_data).replace(';', ' ').replace('/', ' ')
+    edict_data = InvertedIndexWord.normalize_query(str(instance.edict_data))
 
     # Index entry words
     for word in edict_data.split(' '):
         start_position = edict_data.index(word)
-        word = InvertedIndexWord.normalize(word)
+        word = InvertedIndexWord.normalize_word(word)
         if not word:
             continue # word is not indexable
 
@@ -52,7 +52,11 @@ class InvertedIndexWord(models.Model):
     word = models.CharField(max_length=128)
 
     @staticmethod
-    def normalize(word):
+    def normalize_query(query):
+        return query.replace(';', ' ').replace('/', ' ')
+
+    @staticmethod
+    def normalize_word(word):
         # strip trailing whitespace
         word = word.rstrip()
         # make case-insensitive
