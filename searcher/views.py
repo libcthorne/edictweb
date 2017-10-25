@@ -36,6 +36,7 @@ class SearchView(View):
         if not form.is_valid():
             return HttpResponseBadRequest("Invalid form data")
 
+        # Find relevant entries
         query = InvertedIndexWord.normalize_query(form.cleaned_data['query'])
         if not query:
             matching_entries = DictionaryEntry.objects.all()
@@ -49,9 +50,23 @@ class SearchView(View):
                                annotate(num_matches=Count('id')).\
                                order_by('-num_matches', 'id')
 
+        # Paginate results
+        paginator = Paginator(matching_entries, per_page=20)
+
+        page = request.GET.get('page')
+        try:
+            matching_entries = paginator.page(page)
+        except PageNotAnInteger:
+            matching_entries = paginator.page(1)
+        except EmptyPage:
+            matching_entries = paginator.page(paginator.num_pages)
+
+        if query:
             # Highlight text match positions
 
-            match_positions = InvertedIndexEntry.objects.filter(index_word__word__in=normalized_words).\
+            match_positions = InvertedIndexEntry.objects.\
+                              filter(index_word__word__in=normalized_words).\
+                              filter(dictionary_entry__in=matching_entries).\
                               order_by('dictionary_entry_id', 'start_position', 'end_position').\
                               annotate(word=F('index_word__word'))
 
@@ -64,28 +79,37 @@ class SearchView(View):
                 })
 
             for matching_entry in matching_entries:
-                additional_offset = 0
+                matching_entry.edict_data_highlighted = []
+                prev_match_end = 0
+
                 for match_position in match_positions_for_entry[matching_entry.id]:
-                    match_start = match_position['start_position'] + additional_offset
-                    match_end = match_position['end_position'] + additional_offset
-                    matching_entry.edict_data = matching_entry.edict_data[:match_start] + \
-                                                '**' + \
-                                                match_position['word'] + \
-                                                '**' + \
-                                                matching_entry.edict_data[match_end:]
-                    additional_offset += len('****')
+                    match_start = match_position['start_position']
+                    match_end = match_position['end_position']
 
-        paginator = Paginator(matching_entries, per_page=20)
+                    # Everything from last match to current match start is not highlighted
+                    matching_entry.edict_data_highlighted.append((
+                        False,
+                        matching_entry.edict_data[prev_match_end:match_start],
+                    ))
+                    # Current match is highlighted
+                    matching_entry.edict_data_highlighted.append((
+                        True,
+                        match_position['word'],
+                    ))
 
-        page = request.GET.get('page')
-        try:
-            entries = paginator.page(page)
-        except PageNotAnInteger:
-            entries = paginator.page(1)
-        except EmptyPage:
-            entries = paginator.page(paginator.num_pages)
+                    prev_match_end = match_end
 
-        return render(request, 'searcher/index.html', {'form': form, 'entries': entries})
+                # Any remaining text after last match is not highlighted
+                data_end = len(matching_entry.edict_data)
+                if prev_match_end < data_end:
+                    matching_entry.edict_data_highlighted.append((
+                        False,
+                        matching_entry.edict_data[prev_match_end:data_end],
+                    ))
+
+                print(matching_entry.edict_data_highlighted)
+
+        return render(request, 'searcher/index.html', {'form': form, 'entries': matching_entries})
 
     def post(self, request):
         form = SearchForm(request.POST)

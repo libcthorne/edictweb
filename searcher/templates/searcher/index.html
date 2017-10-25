@@ -21,7 +21,7 @@
 
 	{% for entry in entries %}
 		{% if entry.num_matches > 0 %}
-			* ({{ entry.num_matches }} matches) {{ entry.edict_data }}
+			* {% for highlight, text in entry.edict_data_highlighted %}{% if highlight %}<b>{% endif %}{{ text }}{% if highlight %}</b>{% endif %}{% endfor %}
 		{% else %}
 			* {{ entry.edict_data }}
 		{% endif %}
