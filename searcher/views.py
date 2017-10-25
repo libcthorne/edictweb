@@ -96,7 +96,7 @@ class SearchView(View):
                     # Current match is highlighted
                     matching_entry.edict_data_highlighted.append((
                         True,
-                        match_position['word'],
+                        matching_entry.edict_data[match_start:match_end],
                     ))
 
                     prev_match_end = match_end
