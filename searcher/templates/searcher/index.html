@@ -9,6 +9,10 @@
 		<input type="submit" value="Search" />
 	</form>
 
+	{% if showing_matches %}
+		 Found {{ total_matches }} matches
+	{% endif %}
+
 	{% if entries.has_previous %}
 		<a href='?query={{ request.GET.query }}&page={{ entries.previous_page_number}}'>Previous</a>
 	{% endif %}

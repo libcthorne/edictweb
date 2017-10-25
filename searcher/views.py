@@ -61,6 +61,8 @@ class SearchView(View):
         except EmptyPage:
             matching_entries = paginator.page(paginator.num_pages)
 
+        total_matches = paginator.count
+
         if query:
             # Highlight text match positions
 
@@ -109,7 +111,12 @@ class SearchView(View):
 
                 print(matching_entry.edict_data_highlighted)
 
-        return render(request, 'searcher/index.html', {'form': form, 'entries': matching_entries})
+        return render(request, 'searcher/index.html', {
+            'form': form,
+            'entries': matching_entries,
+            'showing_matches': bool(query),
+            'total_matches': total_matches,
+        })
 
     def post(self, request):
         form = SearchForm(request.POST)
