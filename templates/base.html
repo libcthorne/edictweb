@@ -1,5 +1,13 @@
 <html>
 	<body>
+		{% if request.user.is_authenticated %}
+			Logged in as {{ request.user.username }} / <a href="{% url 'accounts:logout' %}">Logout</a>
+		{% else %}
+			Not logged in / <a href="{% url 'accounts:login' %}">Login</a> / <a href="{% url 'accounts:register' %}">Register</a>
+		{% endif %}
+
+		<br/>
+
 		{% block body %}
 		{% endblock %}
 	</body>
