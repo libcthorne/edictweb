@@ -9,21 +9,21 @@
 		<input type="submit" value="Search" />
 	</form>
 
-	{% if showing_matches %}
+	{% if not matches_all_entries %}
 		 Found {{ total_matches }} matches
 	{% endif %}
 
-	{% if entries.has_previous %}
-		<a href='?query={{ request.GET.query }}&page={{ entries.previous_page_number}}'>Previous</a>
+	{% if paginated_matching_entries.has_previous %}
+		<a href='?query={{ request.GET.query }}&page={{ paginated_matching_entries.previous_page_number}}'>Previous</a>
 	{% endif %}
 
-	{% if entries.has_next %}
-		<a href='?query={{ request.GET.query }}&page={{ entries.next_page_number}}'>Next</a>
+	{% if paginated_matching_entries.has_next %}
+		<a href='?query={{ request.GET.query }}&page={{ paginated_matching_entries.next_page_number}}'>Next</a>
 	{% endif %}
 
 	<br/><br/>
 
-	{% for entry in entries %}
+	{% for entry in paginated_matching_entries %}
 		{% if entry.num_matches > 0 %}
 			* {% for highlight, text in entry.edict_data_highlighted %}{% if highlight %}<b>{% endif %}{{ text }}{% if highlight %}</b>{% endif %}{% endfor %}
 		{% else %}
