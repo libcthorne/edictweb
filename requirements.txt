@@ -1,4 +1,5 @@
 django
+djangorestframework
 django-debug-toolbar
 django-extensions
 psycopg2
