@@ -138,3 +138,6 @@ STATIC_URL = '/static/'
 
 # Where to redirect to after login if a 'next' parameter isn't present
 LOGIN_REDIRECT_URL = '/'
+
+# Where to redirect to after logout
+LOGOUT_REDIRECT_URL = '/'
