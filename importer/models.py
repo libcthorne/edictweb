@@ -21,7 +21,10 @@ class PendingDictionaryImportRequest(models.Model):
 
 class DictionaryEntry(models.Model):
     edict_data = models.CharField(max_length=2048)
-    source_import_request = models.ForeignKey(DictionaryImportRequest, on_delete=models.CASCADE)
+
+    # Foreign key constraint with ON DELETE CASCADE manually set
+    # See migration 0015_auto_20171031_2020.py
+    source_import_request = models.ForeignKey(DictionaryImportRequest, on_delete=models.CASCADE, db_constraint=False)
 
     def __str__(self):
         return self.edict_data
@@ -84,7 +87,11 @@ class InvertedIndexWord(models.Model):
 
 class InvertedIndexEntry(models.Model):
     index_word = models.ForeignKey(InvertedIndexWord, on_delete=models.CASCADE, related_name='entries')
-    dictionary_entry = models.ForeignKey(DictionaryEntry, on_delete=models.CASCADE)
+
+    # Foreign key constraint with ON DELETE CASCADE manually set
+    # See migration 0015_auto_20171031_2020.py
+    dictionary_entry = models.ForeignKey(DictionaryEntry, on_delete=models.CASCADE, db_constraint=False)
+
     start_position = models.PositiveIntegerField()
     end_position = models.PositiveIntegerField()
 
