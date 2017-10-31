@@ -64,8 +64,10 @@ class Command(BaseCommand):
             # Read entry lines
             f.seek(first_entry_pos)
             for entry_index, entry_line in enumerate(f):
+                edict_data, sequence_number_, _ = entry_line.rsplit('/', 2)
+
                 # Create and save new entry
-                entry = DictionaryEntry(edict_data=entry_line, source_import_request=import_request)
+                entry = DictionaryEntry(edict_data=edict_data, source_import_request=import_request)
                 entry.save()
                 self.stdout.write("[Request %d] Saved %d/%d entry lines" % (import_request_id, entry_index+1, total_entry_lines))
 
