@@ -6,7 +6,7 @@ from . import views
 app_name = 'api'
 
 router = routers.DefaultRouter()
-router.register(r'entries', views.DictionaryEntryViewSet)
+router.register(r'entries', views.DictionaryEntryViewSet, base_name='entries')
 
 urlpatterns = [
     url(r'^', include(router.urls)),

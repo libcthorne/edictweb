@@ -19,16 +19,23 @@ class SearchView(View):
         if not form.is_valid():
             return HttpResponseBadRequest("Invalid form data")
 
-        results = queries.paginated_search(
+        matching_entries, search_terms, total_matches = queries.search_entries(
             query=form.cleaned_data['query'],
+            paginate=True,
             page=request.GET.get('page'),
         )
 
+        matches_all_entries = len(search_terms) == 0
+        if not matches_all_entries:
+            matching_entries_data_highlighted = queries.get_matching_entries_data_highlighted(matching_entries, search_terms)
+            for matching_entry, data in matching_entries_data_highlighted.items():
+                matching_entry.edict_data_highlighted = data
+
         return render(request, 'searcher/index.html', {
             'form': form,
-            'matches_all_entries': results['matches_all_entries'],
-            'paginated_matching_entries': results['paginated_matching_entries'],
-            'total_matches': results['total_matches'],
+            'matches_all_entries': matches_all_entries,
+            'paginated_matching_entries': matching_entries,
+            'total_matches': total_matches,
         })
 
     def post(self, request):
