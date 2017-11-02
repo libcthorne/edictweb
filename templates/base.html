@@ -1,7 +1,7 @@
 <html>
 	<body>
 		{% if request.user.is_authenticated %}
-			Logged in as {{ request.user.username }} / <a href="{% url 'accounts:logout' %}">Logout</a>
+			Logged in as {{ request.user.username }} ({{ profile.display_name }}) / <a href="{% url 'accounts:edit-profile' %}">Profile</a> / <a href="{% url 'accounts:logout' %}">Logout</a>
 		{% else %}
 			Not logged in / <a href="{% url 'accounts:login' %}">Login</a> / <a href="{% url 'accounts:register' %}">Register</a>
 		{% endif %}
