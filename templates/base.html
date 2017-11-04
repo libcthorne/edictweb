@@ -1,4 +1,8 @@
 <html>
+	<head>
+		{% block head %}
+		{% endblock %}
+	</head>
 	<body>
 		<a href="/">Home</a> /
 		{% if request.user.is_authenticated %}
