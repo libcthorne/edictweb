@@ -2,10 +2,15 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.staticfiles.templatetags.staticfiles import static
 
+from django_resized import ResizedImageField
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     display_name = models.CharField(max_length=64, blank=True)
-    image = models.ImageField(upload_to='images/', null=True, blank=True)
+    image = ResizedImageField(
+        size=[100, 100], force_format='JPEG',
+        upload_to='images/', null=True, blank=True
+    )
 
     def get_image_or_default_url(self):
         if self.image:
