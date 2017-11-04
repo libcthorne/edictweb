@@ -1,3 +1,6 @@
+# edictweb specific
+uploads
+
 # Ansible
 playbook.retry
 

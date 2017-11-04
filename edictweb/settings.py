@@ -157,3 +157,16 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 10,
 }
+
+
+# Media uploads
+
+MEDIA_ROOT = 'uploads/'
+MEDIA_URL = '/uploads/'
+
+
+# Static files
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]

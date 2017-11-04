@@ -1,9 +1,12 @@
 <html>
 	<body>
+		<a href="/">Home</a> /
 		{% if request.user.is_authenticated %}
-			Logged in as {{ request.user.username }} ({{ profile.display_name }}) / <a href="{% url 'accounts:edit-profile' %}">Profile</a> / <a href="{% url 'accounts:logout' %}">Logout</a>
+		  <a href="{% url 'accounts:edit-profile' %}"><img style="width: 30px; height: 30px" src="{{ profile.get_image_or_default_url }}" alt="Profile Image"/>
+			Logged in as {{ request.user.username }} ({{ profile.display_name }})
+			</a> / <a href="{% url 'accounts:logout' %}">Logout</a>
 		{% else %}
-			Not logged in / <a href="{% url 'accounts:login' %}">Login</a> / <a href="{% url 'accounts:register' %}">Register</a>
+			<a href="{% url 'accounts:login' %}">Login</a> / <a href="{% url 'accounts:register' %}">Register</a>
 		{% endif %}
 
 		<br/>

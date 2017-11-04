@@ -2,4 +2,5 @@ django
 djangorestframework
 django-debug-toolbar
 django-extensions
+Pillow
 psycopg2

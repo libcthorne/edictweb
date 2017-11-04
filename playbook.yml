@@ -27,6 +27,13 @@
     become: yes
     become_user: root
 
+  - name: Install libjpeg (for Python's Pillow library, required for Django ImageField)
+    apt: name={{item}} state=present
+    with_items:
+      - libjpeg8-dev
+    become: yes
+    become_user: root
+
   - name: Setup development virtualenv
     pip:
       requirements: /vagrant/requirements.txt
