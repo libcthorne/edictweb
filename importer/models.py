@@ -41,6 +41,8 @@ def post_save(sender, instance, **kwargs):
     # more than once
     prev_start_position = -1
 
+    entries = []
+
     for raw_word in edict_data.split(' '):
         start_position = raw_edict_data.index(raw_word, prev_start_position+1)
         prev_start_position = start_position
@@ -52,7 +54,7 @@ def post_save(sender, instance, **kwargs):
         for i in range(len(word)):
             word_ngram = word[:i+1]
             end_position = start_position+len(word_ngram)
-            print("Indexing %s under %s (start:%d, end:%d)" % (edict_data, word_ngram, start_position, end_position))
+            #print("Indexing %s under %s (start:%d, end:%d)" % (edict_data, word_ngram, start_position, end_position))
             inverted_index_word, _ = InvertedIndexWord.objects.get_or_create(word=word_ngram)
             inverted_index_entry = InvertedIndexEntry(
                 index_word=inverted_index_word,
@@ -60,7 +62,9 @@ def post_save(sender, instance, **kwargs):
                 start_position=start_position,
                 end_position=end_position,
             )
-            inverted_index_entry.save()
+            entries.append(inverted_index_entry)
+
+    InvertedIndexEntry.objects.bulk_create(entries)
 
 class InvertedIndexWord(models.Model):
     word = models.CharField(max_length=128)
