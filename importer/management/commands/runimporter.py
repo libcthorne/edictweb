@@ -1,5 +1,6 @@
 import codecs
 import time
+from datetime import datetime
 
 from django.core.management.base import BaseCommand
 from django.db import IntegrityError
@@ -49,6 +50,8 @@ class Command(BaseCommand):
 
         self.stdout.write("[Request %d] Starting dictionary file import" % import_request_id)
 
+        import_start_time = datetime.now()
+
         # Read and save new dictionary entries
         with codecs.open(DICTIONARY_FILE, 'r', encoding='euc-jp') as f:
             # Read and ignore header
@@ -85,4 +88,11 @@ class Command(BaseCommand):
                 pending_import_request.import_request = None
                 pending_import_request.save()
 
-        self.stdout.write("[Request %d] Finished dictionary file import" % import_request_id)
+        import_finish_time = datetime.now()
+        import_duration = import_finish_time - import_start_time
+
+        self.stdout.write("[Request %d] Finished dictionary file import in (entries: %d, duration: %s)" % (
+            import_request_id,
+            total_entry_lines,
+            import_duration,
+        ))
