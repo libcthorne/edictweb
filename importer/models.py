@@ -67,7 +67,7 @@ def post_save(sender, instance, **kwargs):
     InvertedIndexEntry.objects.bulk_create(entries)
 
 class InvertedIndexWord(models.Model):
-    word = models.CharField(max_length=128)
+    word = models.CharField(max_length=128, unique=True)
 
     @staticmethod
     def normalize_query(query):
