@@ -1,6 +1,7 @@
 import codecs
 import time
 from datetime import datetime
+from multiprocessing import Pool
 
 from django.core.management.base import BaseCommand
 from django.db import IntegrityError
@@ -14,6 +15,24 @@ from importer.models import (
 
 DICTIONARY_FILE = 'edict2'
 IMPORT_REQUEST_POLL_INTERVAL = 5
+
+def save(entry_line, entry_index, total_entry_lines, import_request_id):
+    # Close DB conn to force child processes to create their own
+    from django.db import connection
+    connection.close()
+
+    import_request = DictionaryImportRequest.objects.get(id=import_request_id)
+    edict_data, sequence_number_, _ = entry_line.rsplit('/', 2)
+
+    # Create and save new entry
+    entry = DictionaryEntry(edict_data=edict_data, source_import_request=import_request)
+    print("[Request %d] Saving..." % import_request_id)
+    entry.save()
+    print("[Request %d] Saved %d/%d entry lines" % (import_request_id, entry_index+1, total_entry_lines))
+
+    # Log progress
+    progress = (entry_index+1)/total_entry_lines
+    print("[Request %d] Progress: %.2f%%" % (import_request_id, progress*100))
 
 class Command(BaseCommand):
     help = 'Polls for and processes dictionary import requests'
@@ -52,6 +71,8 @@ class Command(BaseCommand):
 
         import_start_time = datetime.now()
 
+        p = Pool(processes=5)
+
         # Read and save new dictionary entries
         with codecs.open(DICTIONARY_FILE, 'r', encoding='euc-jp') as f:
             # Read and ignore header
@@ -65,18 +86,26 @@ class Command(BaseCommand):
             import_request.save()
 
             # Read entry lines
+            pending_count = total_entry_lines
             f.seek(first_entry_pos)
             for entry_index, entry_line in enumerate(f):
-                edict_data, sequence_number_, _ = entry_line.rsplit('/', 2)
+                def saved(f):
+                    nonlocal pending_count
+                    pending_count -= 1
 
-                # Create and save new entry
-                entry = DictionaryEntry(edict_data=edict_data, source_import_request=import_request)
-                entry.save()
-                self.stdout.write("[Request %d] Saved %d/%d entry lines" % (import_request_id, entry_index+1, total_entry_lines))
+                def error(e):
+                    print(e)
 
-                # Log progress
-                progress = (entry_index+1)/total_entry_lines
-                self.stdout.write("[Request %d] Progress: %.2f%%" % (import_request_id, progress*100))
+                p.apply_async(save, (entry_line, entry_index, total_entry_lines, import_request_id), callback=saved, error_callback=error)
+
+        while pending_count > 0:
+            self.stdout.write("Pending: %d" % pending_count)
+            import time; time.sleep(1)
+        self.stdout.write("Done, pending: %d" % pending_count)
+
+        # Close DB conn to force recreate (seems to be unusable after forking)
+        from django.db import connection
+        connection.close()
 
         # Request finished, mark as completed
         import_request = DictionaryImportRequest.objects.get(id=import_request_id)
