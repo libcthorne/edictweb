@@ -1,6 +1,10 @@
 #!/usr/bin/env python
+
 import os
 import sys
+
+from gevent import monkey; monkey.patch_all()
+import psycogreen.gevent; psycogreen.gevent.patch_psycopg()
 
 if __name__ == "__main__":
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "edictweb.settings")
