@@ -77,16 +77,16 @@ class Command(BaseCommand):
                 # Log progress
                 progress = (entry_index+1)/total_entry_lines
                 self.stdout.write("[Request %d] Progress: %.2f%%" % (import_request_id, progress*100))
-            else:
-                # Request finished, mark as completed
-                import_request = DictionaryImportRequest.objects.get(id=import_request_id)
-                import_request.completed = True
-                import_request.save()
 
-                # Unmark import request as pending
-                pending_import_request = PendingDictionaryImportRequest.objects.get(import_request=import_request)
-                pending_import_request.import_request = None
-                pending_import_request.save()
+        # Request finished, mark as completed
+        import_request = DictionaryImportRequest.objects.get(id=import_request_id)
+        import_request.completed = True
+        import_request.save()
+
+        # Unmark import request as pending
+        pending_import_request = PendingDictionaryImportRequest.objects.get(import_request=import_request)
+        pending_import_request.import_request = None
+        pending_import_request.save()
 
         import_finish_time = datetime.now()
         import_duration = import_finish_time - import_start_time
