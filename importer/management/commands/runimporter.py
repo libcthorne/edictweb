@@ -1,6 +1,7 @@
 import codecs
 import time
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 
 from django.core.management.base import BaseCommand
 from django.db import IntegrityError
@@ -52,6 +53,8 @@ class Command(BaseCommand):
 
         import_start_time = datetime.now()
 
+        p = ThreadPoolExecutor(max_workers=5)
+
         # Read and save new dictionary entries
         with codecs.open(DICTIONARY_FILE, 'r', encoding='euc-jp') as f:
             # Read and ignore header
@@ -65,18 +68,37 @@ class Command(BaseCommand):
             import_request.save()
 
             # Read entry lines
+            pending_count = total_entry_lines
             f.seek(first_entry_pos)
             for entry_index, entry_line in enumerate(f):
-                edict_data, sequence_number_, _ = entry_line.rsplit('/', 2)
+                def save(entry_line, entry_index, import_request):
+                    edict_data, sequence_number_, _ = entry_line.rsplit('/', 2)
 
-                # Create and save new entry
-                entry = DictionaryEntry(edict_data=edict_data, source_import_request=import_request)
-                entry.save()
-                self.stdout.write("[Request %d] Saved %d/%d entry lines" % (import_request_id, entry_index+1, total_entry_lines))
+                    # Create and save new entry
+                    entry = DictionaryEntry(edict_data=edict_data, source_import_request=import_request)
+                    self.stdout.write("[Request %d] Saving..." % import_request_id)
+                    entry.save()
+                    self.stdout.write("[Request %d] Saved %d/%d entry lines" % (import_request_id, entry_index+1, total_entry_lines))
 
-                # Log progress
-                progress = (entry_index+1)/total_entry_lines
-                self.stdout.write("[Request %d] Progress: %.2f%%" % (import_request_id, progress*100))
+                    # Close DB conn
+                    from django.db import connection
+                    connection.close()
+
+                    # Log progress
+                    progress = (entry_index+1)/total_entry_lines
+                    self.stdout.write("[Request %d] Progress: %.2f%%" % (import_request_id, progress*100))
+
+                def saved(f):
+                    nonlocal pending_count
+                    pending_count -= 1
+
+                f = p.submit(save, entry_line, entry_index, import_request)
+                f.add_done_callback(saved)
+
+        while pending_count > 0:
+            self.stdout.write("Pending: %d" % pending_count)
+            import time; time.sleep(1)
+        self.stdout.write("Done, pending: %d" % pending_count)
 
         # Request finished, mark as completed
         import_request = DictionaryImportRequest.objects.get(id=import_request_id)
