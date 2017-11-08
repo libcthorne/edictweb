@@ -3,8 +3,6 @@ import string
 import unicodedata
 
 from django.db import models
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 
 class DictionaryImportRequest(models.Model):
     started = models.BooleanField(default=False)
@@ -28,43 +26,6 @@ class DictionaryEntry(models.Model):
 
     def __str__(self):
         return self.edict_data
-
-@receiver(post_save, sender=DictionaryEntry)
-def post_save(sender, instance, **kwargs):
-    raw_edict_data = str(instance.edict_data)
-    edict_data = InvertedIndexWord.normalize_query(raw_edict_data)
-
-    # Index entry words
-
-    # keep track of the previous word's start_position to enable
-    # correct search of start_position for words contained in data
-    # more than once
-    prev_start_position = -1
-
-    entries = []
-
-    for raw_word in edict_data.split(' '):
-        start_position = raw_edict_data.index(raw_word, prev_start_position+1)
-        prev_start_position = start_position
-        word = InvertedIndexWord.normalize_word(raw_word)
-        if not word:
-            continue # word is not indexable
-
-        # Index each edge n-gram (i.e. quick -> q, qu, qui, quic, quick)
-        for i in range(len(word)):
-            word_ngram = word[:i+1]
-            end_position = start_position+len(word_ngram)
-            #print("Indexing %s under %s (start:%d, end:%d)" % (edict_data, word_ngram, start_position, end_position))
-            inverted_index_word, _ = InvertedIndexWord.objects.get_or_create(word=word_ngram)
-            inverted_index_entry = InvertedIndexEntry(
-                index_word=inverted_index_word,
-                dictionary_entry=instance,
-                start_position=start_position,
-                end_position=end_position,
-            )
-            entries.append(inverted_index_entry)
-
-    InvertedIndexEntry.objects.bulk_create(entries)
 
 class InvertedIndexWord(models.Model):
     word = models.CharField(max_length=128, unique=True)
