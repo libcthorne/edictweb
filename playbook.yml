@@ -27,6 +27,20 @@
     become: yes
     become_user: root
 
+  - name: Install RabbitMQ (for Celery)
+    apt: name={{item}} state=present
+    with_items:
+      - rabbitmq-server
+    become: yes
+    become_user: root
+
+  - name: Enable the rabbitmq_management plugin
+    rabbitmq_plugin:
+      names: rabbitmq_management
+      state: enabled
+    become: yes
+    become_user: root
+
   - name: Install libjpeg (for Python's Pillow library, required for Django ImageField)
     apt: name={{item}} state=present
     with_items:

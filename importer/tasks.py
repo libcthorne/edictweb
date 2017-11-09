@@ -1,10 +1,34 @@
+import os
+
+import django
+from celery import Celery
+
+################################################################
+
+# Setup Django before importing models. Note: not a problem for
+# initialized apps importing this file because setup does nothing if
+# it was already called previously.
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'edictweb.settings')
+django.setup()
+
+################################################################
+
 from .models import (
     DictionaryEntry,
     InvertedIndexEntry,
     InvertedIndexWord,
 )
 
-def index_dictionary_entry(dictionary_entry):
+app = Celery(__name__, broker='pyamqp://guest@localhost//')
+
+@app.task(autoretry_for=(Exception,))
+def index_dictionary_entry_by_id(dictionary_entry_id):
+    try:
+        dictionary_entry = DictionaryEntry.objects.get(id=dictionary_entry_id)
+    except DictionaryEntry.DoesNotExist:
+        print("Unknown dictionary entry %d for index request" % dictionary_entry_id)
+        return
+
     raw_edict_data = str(dictionary_entry.edict_data)
     edict_data = InvertedIndexWord.normalize_query(raw_edict_data)
 

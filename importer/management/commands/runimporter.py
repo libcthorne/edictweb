@@ -11,7 +11,7 @@ from importer.models import (
     InvertedIndexWord,
     PendingDictionaryImportRequest,
 )
-from importer.tasks import index_dictionary_entry
+from importer.tasks import index_dictionary_entry_by_id
 
 DICTIONARY_FILE = 'edict2'
 IMPORT_REQUEST_POLL_INTERVAL = 5
@@ -76,7 +76,7 @@ class Command(BaseCommand):
                 self.stdout.write("[Request %d] Saved %d/%d entry lines" % (import_request_id, entry_index+1, total_entry_lines))
 
                 # Add to index
-                index_dictionary_entry(entry)
+                index_dictionary_entry_by_id.apply_async(args=(entry.id,))
 
                 # Log progress
                 progress = (entry_index+1)/total_entry_lines
