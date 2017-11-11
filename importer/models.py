@@ -27,8 +27,15 @@ class DictionaryEntry(models.Model):
     def __str__(self):
         return self.edict_data
 
-class InvertedIndexWord(models.Model):
-    word = models.CharField(max_length=128, unique=True)
+class InvertedIndexEntry(models.Model):
+    index_word_text = models.CharField(max_length=128, db_index=True)
+
+    # Foreign key constraint with ON DELETE CASCADE manually set
+    # See migration 0015_auto_20171031_2020.py
+    dictionary_entry = models.ForeignKey(DictionaryEntry, on_delete=models.CASCADE, db_constraint=False)
+
+    start_position = models.PositiveIntegerField()
+    end_position = models.PositiveIntegerField()
 
     @staticmethod
     def normalize_query(query):
@@ -46,19 +53,6 @@ class InvertedIndexWord(models.Model):
         word = ''.join(c for c in word if c not in string.punctuation)
 
         return word
-
-    def __str__(self):
-        return self.word
-
-class InvertedIndexEntry(models.Model):
-    index_word = models.ForeignKey(InvertedIndexWord, on_delete=models.CASCADE, related_name='entries')
-
-    # Foreign key constraint with ON DELETE CASCADE manually set
-    # See migration 0015_auto_20171031_2020.py
-    dictionary_entry = models.ForeignKey(DictionaryEntry, on_delete=models.CASCADE, db_constraint=False)
-
-    start_position = models.PositiveIntegerField()
-    end_position = models.PositiveIntegerField()
 
     def __str__(self):
         return "Index of '{}' for {}".format(self.index_word, self.dictionary_entry)

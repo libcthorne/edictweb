@@ -17,7 +17,6 @@ django.setup()
 from .models import (
     DictionaryEntry,
     InvertedIndexEntry,
-    InvertedIndexWord,
 )
 
 app = Celery(__name__, broker='amqp://guest@localhost//')
@@ -31,7 +30,7 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
         return
 
     raw_edict_data = str(dictionary_entry.edict_data)
-    edict_data = InvertedIndexWord.normalize_query(raw_edict_data)
+    edict_data = InvertedIndexEntry.normalize_query(raw_edict_data)
 
     # Index entry words
 
@@ -45,7 +44,7 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
     for raw_word in edict_data.split(' '):
         start_position = raw_edict_data.index(raw_word, prev_start_position+1)
         prev_start_position = start_position
-        word = InvertedIndexWord.normalize_word(raw_word)
+        word = InvertedIndexEntry.normalize_word(raw_word)
         if not word:
             continue # word is not indexable
 
@@ -54,9 +53,8 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
             word_ngram = word[:i+1]
             end_position = start_position+len(word_ngram)
             #print("Indexing %s under %s (start:%d, end:%d)" % (edict_data, word_ngram, start_position, end_position))
-            inverted_index_word, _ = InvertedIndexWord.objects.get_or_create(word=word_ngram)
             inverted_index_entry = InvertedIndexEntry(
-                index_word=inverted_index_word,
+                index_word_text=word_ngram,
                 dictionary_entry=dictionary_entry,
                 start_position=start_position,
                 end_position=end_position,

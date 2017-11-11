@@ -15,11 +15,10 @@ from django.db.models import (
 from importer.models import (
     DictionaryEntry,
     InvertedIndexEntry,
-    InvertedIndexWord,
 )
 
 def search_entries(query, paginate=True, page=None):
-    query = InvertedIndexWord.normalize_query(query)
+    query = InvertedIndexEntry.normalize_query(query)
     if not query:
         search_terms = []
         matching_entries = DictionaryEntry.objects.all()
@@ -28,8 +27,8 @@ def search_entries(query, paginate=True, page=None):
                            order_by('id')
 
     else:
-        search_terms = [InvertedIndexWord.normalize_word(word) for word in query.split(' ')]
-        matching_entries = DictionaryEntry.objects.filter(invertedindexentry__index_word__word__in=search_terms).\
+        search_terms = [InvertedIndexEntry.normalize_word(word) for word in query.split(' ')]
+        matching_entries = DictionaryEntry.objects.filter(invertedindexentry__index_word_text__in=search_terms).\
                            annotate(num_matches=Count('id')).\
                            order_by('-num_matches', 'id')
 
@@ -52,10 +51,10 @@ def get_matching_entries_data_highlighted(matching_entries, search_terms):
     matching_entries_data_highlighted = defaultdict(list)
 
     match_positions = InvertedIndexEntry.objects.\
-                      filter(index_word__word__in=search_terms).\
+                      filter(index_word_text__in=search_terms).\
                       filter(dictionary_entry__in=matching_entries).\
                       order_by('dictionary_entry_id', 'start_position', 'end_position').\
-                      annotate(word=F('index_word__word'))
+                      annotate(word=F('index_word_text'))
 
     match_positions_for_entry = defaultdict(list)
     for match_position in match_positions:

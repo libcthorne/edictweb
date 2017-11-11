@@ -8,7 +8,6 @@ from django.db import IntegrityError
 from importer.models import (
     DictionaryEntry,
     DictionaryImportRequest,
-    InvertedIndexWord,
     PendingDictionaryImportRequest,
 )
 from importer.tasks import index_dictionary_entry_by_id
@@ -44,10 +43,6 @@ class Command(BaseCommand):
         # Remove existing dictionary entries
         self.stdout.write("[Request %d] Deleting existing dictionary entries" % import_request_id)
         DictionaryEntry.objects.all().delete()
-
-        # Remove redundant dictionary index
-        self.stdout.write("[Request %d] Deleting existing dictionary index" % import_request_id)
-        InvertedIndexWord.objects.all().delete()
 
         self.stdout.write("[Request %d] Starting dictionary file import" % import_request_id)
 
