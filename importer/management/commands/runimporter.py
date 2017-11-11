@@ -71,7 +71,8 @@ class Command(BaseCommand):
                 self.stdout.write("[Request %d] Saved %d/%d entry lines" % (import_request_id, entry_index+1, total_entry_lines))
 
                 # Add to index
-                index_dictionary_entry_by_id.apply_async(args=(entry.id,))
+                #index_dictionary_entry_by_id.apply_async(args=(entry.id,))
+                index_dictionary_entry_by_id.apply_async(args=(entry.id, str(entry.edict_data),))
 
                 # Log progress
                 progress = (entry_index+1)/total_entry_lines
