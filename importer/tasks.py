@@ -19,7 +19,7 @@ from .models import (
     InvertedIndexWord,
 )
 
-app = Celery(__name__, broker='pyamqp://guest@localhost//')
+app = Celery(__name__, broker='amqp://guest@localhost//')
 
 @app.task(autoretry_for=(Exception,))
 def index_dictionary_entry_by_id(dictionary_entry_id):
