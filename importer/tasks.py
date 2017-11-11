@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 import django
 from celery import Celery
@@ -62,4 +63,8 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
             )
             entries.append(inverted_index_entry)
 
+    save_start = datetime.now()
     InvertedIndexEntry.objects.bulk_create(entries)
+    save_end = datetime.now()
+
+    print("Saved {} index entries in {}".format(len(entries), save_end-save_start))
