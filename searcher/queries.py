@@ -1,3 +1,4 @@
+import functools
 from collections import defaultdict
 
 from django.core.paginator import (
@@ -22,15 +23,32 @@ def search_entries(query, paginate=True, page=None):
     if not query:
         search_terms = []
         matching_entries = DictionaryEntry.objects.all()
-        matching_entries = matching_entries.\
-                           annotate(num_matches=Value(0, IntegerField())).\
-                           order_by('id')
-
+        matching_entries = matching_entries.order_by('id')
     else:
         search_terms = [InvertedIndexEntry.normalize_word(word) for word in query.split(' ')]
-        matching_entries = DictionaryEntry.objects.filter(invertedindexentry__index_word_text__in=search_terms).\
-                           annotate(num_matches=Count('id')).\
-                           order_by('-num_matches', 'id')
+        index_entries = InvertedIndexEntry.objects.\
+                        filter(index_word_text__in=search_terms).\
+                        select_related('dictionary_entry').\
+                        order_by('dictionary_entry_id')
+
+        if index_entries:
+            # Build map of search term -> dictionary entries
+            search_term_to_entries = defaultdict(set)
+            for index_entry in index_entries:
+                dictionary_entry = index_entry.dictionary_entry
+                search_term_to_entries[index_entry.index_word_text].add(
+                    dictionary_entry
+                )
+
+            # Find dictionary entries matching all search terms
+            matching_entries = list(
+                functools.reduce(
+                    lambda s1, s2: s1 & s2,
+                    search_term_to_entries.values()
+                )
+            )
+        else:
+            matching_entries = []
 
     if paginate:
         paginator = Paginator(matching_entries, per_page=20)
@@ -68,7 +86,8 @@ def get_matching_entries_data_highlighted(matching_entries, search_terms):
         prev_match_end = 0
 
         for match_position in match_positions_for_entry[matching_entry.id]:
-            match_start = match_position['start_position']
+            # Max ensures start is not less than any previous highlights
+            match_start = max(match_position['start_position'], prev_match_end)
             match_end = match_position['end_position']
 
             # Everything from last match to current match start is not highlighted
