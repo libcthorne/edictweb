@@ -55,4 +55,4 @@ class InvertedIndexEntry(models.Model):
         return word
 
     def __str__(self):
-        return "Index of '{}' for {}".format(self.index_word, self.dictionary_entry)
+        return "Index of '{}' for {}".format(self.index_word_text, self.dictionary_entry)
