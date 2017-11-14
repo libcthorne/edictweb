@@ -37,6 +37,8 @@ class InvertedIndexEntry(models.Model):
     start_position = models.PositiveIntegerField()
     end_position = models.PositiveIntegerField()
 
+    weight = models.FloatField()
+
     @staticmethod
     def normalize_query(query):
         return re.sub(r'[;/()\[\[]', ' ', query)
