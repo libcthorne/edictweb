@@ -17,15 +17,16 @@ from importer.models import (
     DictionaryEntry,
     InvertedIndexEntry,
 )
+from importer.util import normalize_query, normalize_word
 
 def search_entries(query, paginate=True, page=None):
-    query = InvertedIndexEntry.normalize_query(query)
+    query = normalize_query(query)
     if not query:
         search_terms = []
         matching_entries = DictionaryEntry.objects.all()
         matching_entries = matching_entries.order_by('id')
     else:
-        search_terms = [InvertedIndexEntry.normalize_word(word) for word in query.split(' ')]
+        search_terms = [normalize_word(word) for word in query.split(' ')]
         index_entries = InvertedIndexEntry.objects.\
                         filter(index_word_text__in=search_terms).\
                         select_related('dictionary_entry').\

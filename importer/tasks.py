@@ -5,6 +5,8 @@ from datetime import datetime
 import django
 from celery import Celery
 
+from .util import normalize_query, normalize_word
+
 ################################################################
 
 # Setup Django before importing models. Note: not a problem for
@@ -82,10 +84,10 @@ def _build_index_entries(dictionary_entry, descriptions):
     entries = []
 
     for raw_description in descriptions:
-        description = InvertedIndexEntry.normalize_query(raw_description)
+        description = normalize_query(raw_description)
         description_words = description.split(' ')
         for raw_word in description_words:
-            word = InvertedIndexEntry.normalize_word(raw_word)
+            word = normalize_word(raw_word)
             if not word:
                 continue # word is not indexable
 
