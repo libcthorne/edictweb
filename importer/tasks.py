@@ -1,5 +1,4 @@
 import os
-import re
 from datetime import datetime
 
 import django
@@ -34,19 +33,14 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
 
     # Extract Japanese forms and English glosses from raw edict data
     raw_edict_data = str(dictionary_entry.edict_data)
-    jp_text, en_text = raw_edict_data.split(" /", 1)
+    jp_text, en_text = raw_edict_data.split("|", 1)
 
-    # Parse Japanese forms string into array, e.g.
-    # e.g. "〃 [おなじ;おなじく]" -> ["〃", "おなじ", "おなじく"]
-    jp_text = re.sub("\([^\(]+\) ?", "", jp_text) # Temporary (removes reading->kanji link)
-    jp_text = jp_text.replace(" [", ";") # Temporary (puts readings into same form as kanji forms)
-    jp_text = jp_text.replace("]", "") # Temporary (puts readings into same form as kanji forms)
+    # Split Japanese forms string into array, e.g.
+    # e.g. "〃;おなじ;おなじく" -> ["〃", "おなじ", "おなじく"]
     jp_text_forms = jp_text.split(";")
 
-    # Parse English glosses string into array
-    # e.g. "{comp} (n) (v) to total/to sum (see xx)" -> ["to total", "to sum"]
-    en_text = re.sub("\([^\(]+\) ?", "", en_text) # Temporary (removes (n) etc.)
-    en_text = re.sub("\{[^{]+\} ?", "", en_text) # Temporary (removes {comp} etc.)
+    # Split English glosses string into array
+    # e.g. "to total/to sum" -> ["to total", "to sum"]
     en_text_glosses = en_text.split("/")
 
     # Build index entries from forms and glosses
