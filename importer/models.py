@@ -40,5 +40,11 @@ class InvertedIndexEntry(models.Model):
 
     weight = models.FloatField()
 
+    index_column = models.CharField(max_length=128)
+
     def __str__(self):
-        return "Index of '{}' for {}".format(self.index_word_text, self.dictionary_entry)
+        return "Index of '{}' for {} on column {}".format(
+            self.index_word_text,
+            self.dictionary_entry,
+            self.index_column,
+        )

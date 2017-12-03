@@ -32,8 +32,8 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
         return
 
     # Extract Japanese forms and English glosses from raw edict data
-    raw_edict_data = str(dictionary_entry.edict_data)
-    jp_text, en_text = raw_edict_data.split("|", 1)
+    jp_text = dictionary_entry.jp_text
+    en_text = dictionary_entry.en_text
 
     # Split Japanese forms string into array, e.g.
     # e.g. "〃;おなじ;おなじく" -> ["〃", "おなじ", "おなじく"]
@@ -45,8 +45,8 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
 
     # Build index entries from forms and glosses
     entries = (
-        _build_index_entries(dictionary_entry, jp_text_forms)
-        + _build_index_entries(dictionary_entry, en_text_glosses)
+        _build_index_entries(dictionary_entry, jp_text_forms, 'edict_data')
+        + _build_index_entries(dictionary_entry, en_text_glosses, 'edict_data')
     )
 
     # Save index entries
@@ -56,21 +56,25 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
 
     print("Saved {} index entries in {}".format(len(entries), save_end-save_start))
 
-def _build_index_entries(dictionary_entry, descriptions):
+def _build_index_entries(dictionary_entry, descriptions, index_column):
     """
     Builds InvertedIndexEntry objects for a given dictionary entry
     from a list of descriptions. Descriptions can be a list of English
     definitions ("glosses") with words separated by spaces, e.g.
     ["stray cat", "alley cat"] or a list of Japanese forms, e.g.
     ["野良猫", "のらねこ"].
+
+    Index column is the name of the column that contains the string
+    being indexed, e.g. "jp_text" or "en_text". This string is used to
+    determine where a description match occurs for highlighting
+    purposes.
     """
     #print("Build index entries for %s from %s" % (dictionary_entry, descriptions))
 
-    # Edict data being indexed
-    raw_edict_data = str(dictionary_entry.edict_data)
+    index_context = getattr(dictionary_entry, index_column)
 
     # Keep track of the previous word's start_position to enable
-    # correct search of start_position in edict_data for words
+    # correct search of start_position in index_context for words
     # contained more than once
     prev_start_position = -1
 
@@ -85,7 +89,7 @@ def _build_index_entries(dictionary_entry, descriptions):
             if not word:
                 continue # word is not indexable
 
-            start_position = raw_edict_data.index(raw_word, prev_start_position+1)
+            start_position = index_context.index(raw_word, prev_start_position+1)
             prev_start_position = start_position
 
             # Index each edge n-gram (i.e. quick -> q, qu, qui, quic, quick)
@@ -100,7 +104,7 @@ def _build_index_entries(dictionary_entry, descriptions):
                 # More descriptions should reduce the weight of a single description match
                 weight /= len(descriptions)
 
-                #print("Indexing %s under %s (start:%d, end:%d, weight:%s)" % (raw_edict_data, word_ngram, start_position, end_position, weight))
+                #print("Indexing %s under %s (start:%d, end:%d, weight:%s)" % (index_context, word_ngram, start_position, end_position, weight))
 
                 inverted_index_entry = InvertedIndexEntry(
                     index_word_text=word_ngram,
@@ -108,6 +112,7 @@ def _build_index_entries(dictionary_entry, descriptions):
                     start_position=start_position,
                     end_position=end_position,
                     weight=weight,
+                    index_column=index_column,
                 )
                 entries.append(inverted_index_entry)
 
