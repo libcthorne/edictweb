@@ -74,12 +74,13 @@ def search_entries(query, paginate=True, page=None):
 
     return matching_entries, search_terms, total_matches
 
-def get_matching_entries_data_highlighted(matching_entries, search_terms):
+def get_matching_entries_data_highlighted(matching_entries, search_terms, index_column):
     matching_entries_data_highlighted = defaultdict(list)
 
     match_positions = InvertedIndexEntry.objects.\
                       filter(index_word_text__in=search_terms).\
                       filter(dictionary_entry__in=matching_entries).\
+                      filter(index_column=index_column).\
                       order_by('dictionary_entry_id', 'start_position', 'end_position').\
                       annotate(word=F('index_word_text'))
 
@@ -92,6 +93,7 @@ def get_matching_entries_data_highlighted(matching_entries, search_terms):
         })
 
     for matching_entry in matching_entries:
+        match_context = getattr(matching_entry, index_column)
         prev_match_end = 0
 
         for match_position in match_positions_for_entry[matching_entry.id]:
@@ -102,22 +104,22 @@ def get_matching_entries_data_highlighted(matching_entries, search_terms):
             # Everything from last match to current match start is not highlighted
             matching_entries_data_highlighted[matching_entry].append((
                 False,
-                matching_entry.edict_data[prev_match_end:match_start],
+                match_context[prev_match_end:match_start],
             ))
             # Current match is highlighted
             matching_entries_data_highlighted[matching_entry].append((
                 True,
-                matching_entry.edict_data[match_start:match_end],
+                match_context[match_start:match_end],
             ))
 
             prev_match_end = match_end
 
         # Any remaining text after last match is not highlighted
-        data_end = len(matching_entry.edict_data)
+        data_end = len(match_context)
         if prev_match_end < data_end:
             matching_entries_data_highlighted[matching_entry].append((
                 False,
-                matching_entry.edict_data[prev_match_end:data_end],
+                match_context[prev_match_end:data_end],
             ))
 
     return matching_entries_data_highlighted

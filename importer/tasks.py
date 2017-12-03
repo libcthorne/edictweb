@@ -45,8 +45,8 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
 
     # Build index entries from forms and glosses
     entries = (
-        _build_index_entries(dictionary_entry, jp_text_forms, 'edict_data')
-        + _build_index_entries(dictionary_entry, en_text_glosses, 'edict_data')
+        _build_index_entries(dictionary_entry, jp_text_forms, 'jp_text')
+        + _build_index_entries(dictionary_entry, en_text_glosses, 'en_text')
     )
 
     # Save index entries

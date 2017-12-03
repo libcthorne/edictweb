@@ -32,9 +32,12 @@
 
 	{% for entry in paginated_matching_entries %}
 		{% if matches_all_entries %}
-			* {{ entry.edict_data }}
+			* {{ entry.jp_text }} | {{ entry.en_text }}
 		{% else %}
-			* {% for highlight, text in entry.edict_data_highlighted %}{% if highlight %}<b>{% endif %}{{ text }}{% if highlight %}</b>{% endif %}{% endfor %}
+			*
+			{% for highlight, text in entry.jp_text_highlighted %}{% if highlight %}<b>{% endif %}{{ text }}{% if highlight %}</b>{% endif %}{% endfor %}
+			|
+			{% for highlight, text in entry.en_text_highlighted %}{% if highlight %}<b>{% endif %}{{ text }}{% if highlight %}</b>{% endif %}{% endfor %}
 		{% endif %}
 		<br/>
 	{% endfor %}

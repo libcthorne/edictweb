@@ -27,9 +27,16 @@ class SearchView(View):
 
         matches_all_entries = len(search_terms) == 0
         if not matches_all_entries:
-            matching_entries_data_highlighted = queries.get_matching_entries_data_highlighted(matching_entries, search_terms)
+            matching_entries_jp_text_highlighted = queries.get_matching_entries_data_highlighted(
+                matching_entries, search_terms, 'jp_text',
+            )
+            matching_entries_en_text_highlighted = queries.get_matching_entries_data_highlighted(
+                matching_entries, search_terms, 'en_text',
+            )
+
             for matching_entry in matching_entries:
-                matching_entry.edict_data_highlighted = matching_entries_data_highlighted[matching_entry]
+                matching_entry.jp_text_highlighted = matching_entries_jp_text_highlighted[matching_entry]
+                matching_entry.en_text_highlighted = matching_entries_en_text_highlighted[matching_entry]
 
         return render(request, 'searcher/index.html', {
             'form': form,
