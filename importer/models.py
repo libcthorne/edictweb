@@ -21,12 +21,8 @@ class DictionaryEntry(models.Model):
     # See migration 0015_auto_20171031_2020.py
     source_import_request = models.ForeignKey(DictionaryImportRequest, on_delete=models.CASCADE, db_constraint=False)
 
-    @property
-    def edict_data(self):
-        return self.jp_text + "|" + self.en_text
-
     def __str__(self):
-        return self.edict_data
+        return self.jp_text + "|" + self.en_text
 
 class InvertedIndexEntry(models.Model):
     index_word_text = models.CharField(max_length=128, db_index=True)
