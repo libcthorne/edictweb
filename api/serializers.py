@@ -5,4 +5,4 @@ from importer.models import DictionaryEntry
 class DictionaryEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = DictionaryEntry
-        fields = ('id', 'edict_data',)
+        fields = ('id', 'jp_text', 'en_text',)
