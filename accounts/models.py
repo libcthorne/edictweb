@@ -8,7 +8,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     display_name = models.CharField(max_length=64, blank=True)
     image = ResizedImageField(
-        size=[100, 100], force_format='JPEG',
+        size=[100, 100],
         upload_to='images/', null=True, blank=True
     )
 
