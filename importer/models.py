@@ -14,11 +14,16 @@ class PendingDictionaryImportRequest(models.Model):
     import_request = models.OneToOneField(DictionaryImportRequest, on_delete=models.SET_NULL, null=True)
 
 class DictionaryEntry(models.Model):
-    edict_data = models.CharField(max_length=2048)
+    jp_text = models.CharField(max_length=2048)
+    en_text = models.CharField(max_length=2048)
 
     # Foreign key constraint with ON DELETE CASCADE manually set
     # See migration 0015_auto_20171031_2020.py
     source_import_request = models.ForeignKey(DictionaryImportRequest, on_delete=models.CASCADE, db_constraint=False)
+
+    @property
+    def edict_data(self):
+        return self.jp_text + "|" + self.en_text
 
     def __str__(self):
         return self.edict_data

@@ -69,16 +69,24 @@ class Command(BaseCommand):
             for entry_index, entry_line in enumerate(f):
                 edict_data, sequence_number_, _ = entry_line.rsplit('/', 2)
 
-                # Format text to make indexing simpler
-                edict_data = edict_data.replace(" /", "|") # replace divider of jp and en text
-                edict_data = EDICT_BRACES_REGEX.sub("", edict_data) # remove {comp} etc.
-                edict_data = EDICT_PARENTHESES_REGEX.sub("", edict_data) # remove reading->kanji info and (n) etc.
-                edict_data = EDICT_P_GLOSS_REGEX.sub("", edict_data) # remove trailing (P) glosses
-                edict_data = edict_data.replace(" [", ";") # convert kana readings into same form as kanji forms
-                edict_data = edict_data.replace("]", "") # convert kana readings into same form as kanji forms
+                # Split JP/EN text
+                jp_text, en_text = edict_data.split(' /', 1)
+
+                # Format JP text to make indexing simpler
+                jp_text = jp_text.replace(" [", ";") # convert kana readings into same form as kanji forms
+                jp_text = jp_text.replace("]", "") # convert kana readings into same form as kanji forms
+
+                # Format EN text to make indexing simpler
+                en_text = EDICT_BRACES_REGEX.sub("", en_text) # remove {comp} etc.
+                en_text = EDICT_PARENTHESES_REGEX.sub("", en_text) # remove (n) etc.
+                en_text = EDICT_P_GLOSS_REGEX.sub("", en_text) # remove trailing (P) glosses
 
                 # Create and save new entry
-                entry = DictionaryEntry(edict_data=edict_data, source_import_request=import_request)
+                entry = DictionaryEntry(
+                    jp_text=jp_text,
+                    en_text=en_text,
+                    source_import_request=import_request,
+                )
                 entry.save()
                 self.stdout.write("[Request %d] Saved %d/%d entry lines" % (import_request_id, entry_index+1, total_entry_lines))
 
