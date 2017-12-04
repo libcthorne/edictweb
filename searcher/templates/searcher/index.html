@@ -6,39 +6,39 @@
 {% endblock %}
 
 {% block body %}
-	<h1>Welcome to edictweb</h1>
-
 	<form action="" method="post">
-		{% csrf_token %}
-		{% for field in form %}
-			{{ field }}
-		{% endfor %}
-		<input type="submit" value="Search" />
+		<div class="input-group">
+			{% csrf_token %}
+			{{ form.query }}
+			<span class="input-group-btn">
+				<input class="btn btn-primary" type="submit" value="Search" />
+			</span>
+		</div>
 	</form>
 
-	{% if not matches_all_entries %}
-		 Found {{ total_matches }} matches
-	{% endif %}
-
-	{% if paginated_matching_entries.has_previous %}
-		<a href='?query={{ request.GET.query }}&page={{ paginated_matching_entries.previous_page_number}}'>Previous</a>
-	{% endif %}
-
-	{% if paginated_matching_entries.has_next %}
-		<a href='?query={{ request.GET.query }}&page={{ paginated_matching_entries.next_page_number}}'>Next</a>
-	{% endif %}
-
-	<br/><br/>
+	<br/>
 
 	{% for entry in paginated_matching_entries %}
 		{% if matches_all_entries %}
-			* {{ entry.jp_text }} | {{ entry.en_text }}
+			{{ entry.jp_text }} | {{ entry.en_text }}
 		{% else %}
-			*
 			{% for highlight, text in entry.jp_text_highlighted %}{% if highlight %}<b>{% endif %}{{ text }}{% if highlight %}</b>{% endif %}{% endfor %}
 			|
 			{% for highlight, text in entry.en_text_highlighted %}{% if highlight %}<b>{% endif %}{{ text }}{% if highlight %}</b>{% endif %}{% endfor %}
 		{% endif %}
 		<br/>
 	{% endfor %}
+
+	<br/>
+
+	<div class="float-left">
+		{% if paginated_matching_entries.has_previous %}
+			<a class="btn btn-secondary" href='?query={{ request.GET.query }}&page={{ paginated_matching_entries.previous_page_number}}'><</a>
+		{% endif %}
+	</div>
+	<div class="float-right">
+		{% if paginated_matching_entries.has_next %}
+			<a class="btn btn-secondary" href='?query={{ request.GET.query }}&page={{ paginated_matching_entries.next_page_number}}'>></a>
+		{% endif %}
+	</div>
 {% endblock %}
