@@ -20,25 +20,25 @@
 
 	{% for entry in paginated_matching_entries %}
 		{% if matches_all_entries %}
-			{{ entry.jp_text }} | {{ entry.en_text }}
+			{{ entry.jp_text }}<br/>{{ entry.en_text }}
 		{% else %}
 			{% for highlight, text in entry.jp_text_highlighted %}{% if highlight %}<b>{% endif %}{{ text }}{% if highlight %}</b>{% endif %}{% endfor %}
-			|
+			<br/>
 			{% for highlight, text in entry.en_text_highlighted %}{% if highlight %}<b>{% endif %}{{ text }}{% if highlight %}</b>{% endif %}{% endfor %}
 		{% endif %}
-		<br/>
+		<hr/>
 	{% endfor %}
 
 	<br/>
 
 	<div class="float-left">
 		{% if paginated_matching_entries.has_previous %}
-			<a class="btn btn-secondary" href='?query={{ request.GET.query }}&page={{ paginated_matching_entries.previous_page_number}}'><</a>
+			<a class="btn btn-secondary" href='?query={{ request.GET.query }}&page={{ paginated_matching_entries.previous_page_number}}'>Previous</a>
 		{% endif %}
 	</div>
 	<div class="float-right">
 		{% if paginated_matching_entries.has_next %}
-			<a class="btn btn-secondary" href='?query={{ request.GET.query }}&page={{ paginated_matching_entries.next_page_number}}'>></a>
+			<a class="btn btn-secondary" href='?query={{ request.GET.query }}&page={{ paginated_matching_entries.next_page_number}}'>Next</a>
 		{% endif %}
 	</div>
 {% endblock %}
