@@ -1,13 +1,16 @@
 from django.contrib.auth import views as default_auth_views
-from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render
 from django.views.generic.edit import CreateView, UpdateView
 
-from .forms import ProfileForm
+from .forms import (
+    AuthenticationForm,
+    ProfileForm,
+    UserCreationForm,
+)
 from . import queries
 
 class LoginView(default_auth_views.LoginView):
-    pass
+    form_class = AuthenticationForm
 
 class LogoutView(default_auth_views.LogoutView):
     pass
