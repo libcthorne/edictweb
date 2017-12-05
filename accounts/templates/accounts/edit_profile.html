@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block body %}
-<div class="col-lg-6 offset-lg-3">
+<div class="col-lg-6 offset-lg-3 form-control bg-faded">
 	<form action="" method="post" enctype="multipart/form-data">
 		{% csrf_token %}
 		{% for error in form.non_field_errors %}
