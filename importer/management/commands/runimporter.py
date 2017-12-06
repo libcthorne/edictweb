@@ -74,6 +74,7 @@ class Command(BaseCommand):
                 meta_text = ""
                 for meta_text_match in meta_text_matches:
                     meta_text += meta_text_match[0]
+                meta_text = meta_text.rstrip()
 
                 # Format JP text to make indexing simpler
                 jp_text = jp_text.replace(" [", ";") # convert kana readings into same form as kanji forms
