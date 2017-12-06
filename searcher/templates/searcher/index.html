@@ -29,8 +29,9 @@
 			{% endif %}
 
 			<br/>
-			<span class="badge badge-primary">noun</span>
-			<span class="badge badge-primary">comp</span>
+			{% for label in entry.meta_labels %}
+				<span class="badge badge-primary">{{ label }}</span>
+			{% endfor %}
 		</div>
 		<hr/>
 	{% endfor %}

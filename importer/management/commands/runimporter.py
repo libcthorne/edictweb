@@ -14,8 +14,7 @@ from importer.models import (
 from importer.tasks import index_dictionary_entry_by_id
 
 DICTIONARY_FILE = 'edict2'
-EDICT_BRACES_REGEX = re.compile(" ?\{[^{]+\} ")
-EDICT_PARENTHESES_REGEX = re.compile(" ?\([^\(]+\) ")
+EDICT_METADATA_REGEX = re.compile("((\([a-z][a-z0-9-,]*\) )+(\{[a-z0-9-,]+\} )*)")
 EDICT_P_GLOSS_REGEX = re.compile("/\(P\)$")
 IMPORT_REQUEST_POLL_INTERVAL = 5
 
@@ -69,22 +68,25 @@ class Command(BaseCommand):
             for entry_index, entry_line in enumerate(f):
                 edict_data, sequence_number_, _ = entry_line.rsplit('/', 2)
 
-                # Split JP/EN text
+                # Split JP/EN/meta text
                 jp_text, en_text = edict_data.split(' /', 1)
+                meta_text_matches = EDICT_METADATA_REGEX.findall(en_text)
+                meta_text = ""
+                for meta_text_match in meta_text_matches:
+                    meta_text += meta_text_match[0]
 
                 # Format JP text to make indexing simpler
                 jp_text = jp_text.replace(" [", ";") # convert kana readings into same form as kanji forms
                 jp_text = jp_text.replace("]", "") # convert kana readings into same form as kanji forms
 
                 # Format EN text to make indexing simpler
-                en_text = EDICT_BRACES_REGEX.sub("", en_text) # remove {comp} etc.
-                en_text = EDICT_PARENTHESES_REGEX.sub("", en_text) # remove (n) etc.
                 en_text = EDICT_P_GLOSS_REGEX.sub("", en_text) # remove trailing (P) glosses
 
                 # Create and save new entry
                 entry = DictionaryEntry(
                     jp_text=jp_text,
                     en_text=en_text,
+                    meta_text=meta_text,
                     source_import_request=import_request,
                 )
                 entry.save()

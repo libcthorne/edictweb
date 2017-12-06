@@ -1,3 +1,5 @@
+import re
+
 from django.db import models
 
 class DictionaryImportRequest(models.Model):
@@ -16,10 +18,14 @@ class PendingDictionaryImportRequest(models.Model):
 class DictionaryEntry(models.Model):
     jp_text = models.CharField(max_length=2048)
     en_text = models.CharField(max_length=2048)
+    meta_text = models.CharField(max_length=2048)
 
     # Foreign key constraint with ON DELETE CASCADE manually set
     # See migration 0015_auto_20171031_2020.py
     source_import_request = models.ForeignKey(DictionaryImportRequest, on_delete=models.CASCADE, db_constraint=False)
+
+    def meta_labels(self):
+        return re.sub("[\(\){}]", "", self.meta_text).split(" ")
 
     def __str__(self):
         return self.jp_text + "|" + self.en_text
