@@ -19,16 +19,19 @@
 	<br/>
 
 	{% for entry in paginated_matching_entries %}
-		<div>
+		<div class="form-control bg-faded">
 			{% if matches_all_entries %}
-				{{ entry.jp_text }}<br/>{{ entry.en_text }}
+				<h5>{{ entry.jp_text }}</h5>
+				<h6>{{ entry.en_text }}</h6>
 			{% else %}
+				<h5>
 				{% for highlight, text in entry.jp_text_highlighted %}{% if highlight %}<b>{% endif %}{{ text }}{% if highlight %}</b>{% endif %}{% endfor %}
-				<br/>
+				</h5>
+				<h6>
 				{% for highlight, text in entry.en_text_highlighted %}{% if highlight %}<b>{% endif %}{{ text }}{% if highlight %}</b>{% endif %}{% endfor %}
+				</h6>
 			{% endif %}
 
-			<br/>
 			{% for label in entry.meta_labels %}
 				<span class="badge badge-primary">{{ label }}</span>
 			{% endfor %}
