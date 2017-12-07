@@ -170,3 +170,8 @@ MEDIA_URL = '/uploads/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
+
+
+# Site URL for link generation
+
+SITE_URL = "http://localhost:8000"
