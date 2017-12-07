@@ -26,3 +26,11 @@ def normalize_word(word):
 
 def meta_info_to_label(meta_info):
     return META_INFO_TO_LABEL_MAP.get(meta_info, meta_info)
+
+def sequence_number_from_str(sequence_number_str):
+    if sequence_number_str[-1] == 'X':
+        # EntLnnnnnnX -> nnnnnn
+        return int(sequence_number_str[4:-1])
+    else:
+        # EntLnnnnnn -> nnnnnn
+        return int(sequence_number_str[4:])

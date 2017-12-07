@@ -12,6 +12,7 @@ from importer.models import (
     PendingDictionaryImportRequest,
 )
 from importer.tasks import index_dictionary_entry_by_id
+from importer.util import sequence_number_from_str
 
 DICTIONARY_FILE = 'edict2'
 EDICT_METADATA_REGEX = re.compile("((\([a-z][a-z0-9-,]*\) )+(\{[a-z0-9-,]+\} )*)")
@@ -66,7 +67,8 @@ class Command(BaseCommand):
             # Read entry lines
             f.seek(first_entry_pos)
             for entry_index, entry_line in enumerate(f):
-                edict_data, sequence_number_, _ = entry_line.rsplit('/', 2)
+                edict_data, sequence_number_str, _ = entry_line.rsplit('/', 2)
+                sequence_number = sequence_number_from_str(sequence_number_str)
 
                 # Split JP/EN/meta text
                 jp_text, en_text = edict_data.split(' /', 1)
@@ -88,6 +90,7 @@ class Command(BaseCommand):
                     jp_text=jp_text,
                     en_text=en_text,
                     meta_text=meta_text,
+                    sequence_number=sequence_number,
                     source_import_request=import_request,
                 )
                 entry.save()
