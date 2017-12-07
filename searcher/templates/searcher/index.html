@@ -32,9 +32,16 @@
 				</h6>
 			{% endif %}
 
-			{% for label in entry.meta_labels %}
-				<span class="badge badge-primary">{{ label }}</span>
-			{% endfor %}
+
+			<div class="clearfix">
+				{% for label in entry.meta_labels %}
+					<span class="badge badge-primary">{{ label }}</span>
+				{% endfor %}
+
+				<a href="">
+					<img class="float-right" src="{% static "images/share.png" %}" alt="Share"/>
+				</a>
+			</div>
 		</div>
 		<hr/>
 	{% endfor %}
