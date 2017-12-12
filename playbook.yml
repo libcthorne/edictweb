@@ -73,6 +73,7 @@
       name: django
       password: django
       priv: ALL
+      role_attr_flags: CREATEDB
     become: true
     become_user: postgres
 
