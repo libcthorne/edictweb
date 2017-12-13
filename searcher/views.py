@@ -4,6 +4,7 @@ from django.http import (
     HttpResponseBadRequest,
 )
 from django.shortcuts import (
+    get_object_or_404,
     redirect,
     render,
     reverse,
@@ -24,7 +25,10 @@ class SearchView(View):
 
         sequence_number = request.GET.get('seq_no')
         if sequence_number is not None:
-            matching_entries = [DictionaryEntry.objects.get(sequence_number=sequence_number)]
+            matching_entries = [get_object_or_404(
+                DictionaryEntry,
+                sequence_number=sequence_number,
+            )]
             total_matches = 1
             matches_all_entries = True
         else:
