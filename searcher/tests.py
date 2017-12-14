@@ -36,6 +36,10 @@ class SearchViewTests(TestCase):
         response = self.client.get(reverse("searcher:index"))
         self.assertEqual(response.status_code, 200)
 
+        c = response.context
+        self.assertEqual(c['should_highlight'], False)
+        self.assertEqual(c['total_matches'], 0)
+
     def test_index_with_dictionary_entries(self):
         import_request = create_stub_import_request()
 
@@ -46,6 +50,10 @@ class SearchViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "猫")
         self.assertContains(response, "犬")
+
+        c = response.context
+        self.assertEqual(c['should_highlight'], False)
+        self.assertEqual(c['total_matches'], 2)
 
     def test_invalid_sequence_lookup(self):
         response = self.client.get(reverse("searcher:index"), {'seq_no': 100})
@@ -62,6 +70,10 @@ class SearchViewTests(TestCase):
         self.assertContains(response, "犬")
         self.assertNotContains(response, "猫")
 
+        c = response.context
+        self.assertEqual(c['should_highlight'], False)
+        self.assertEqual(c['total_matches'], 1)
+
     def test_empty_query(self):
         import_request = create_stub_import_request()
 
@@ -72,6 +84,10 @@ class SearchViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "犬")
         self.assertContains(response, "猫")
+
+        c = response.context
+        self.assertEqual(c['should_highlight'], False)
+        self.assertEqual(c['total_matches'], 2)
 
     def test_valid_query(self):
         import_request = create_stub_import_request()
@@ -101,6 +117,10 @@ class SearchViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "犬")
         self.assertNotContains(response, "猫")
+
+        c = response.context
+        self.assertEqual(c['should_highlight'], True)
+        self.assertEqual(c['total_matches'], 1)
 
     def test_post_redirect(self):
         response = self.client.post(reverse("searcher:index"), {'query': "dog"}, follow=True)
