@@ -4,6 +4,7 @@ from django.urls import reverse
 from importer.models import (
     DictionaryEntry,
     DictionaryImportRequest,
+    InvertedIndexEntry,
 )
 
 def create_stub_import_request():
@@ -60,3 +61,47 @@ class SearchViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "犬")
         self.assertNotContains(response, "猫")
+
+    def test_empty_query(self):
+        import_request = create_stub_import_request()
+
+        entry1 = create_dog_dictionary_entry(import_request)
+        entry2 = create_cat_dictionary_entry(import_request)
+
+        response = self.client.get(reverse("searcher:index"), {'query': ""})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "犬")
+        self.assertContains(response, "猫")
+
+    def test_valid_query(self):
+        import_request = create_stub_import_request()
+
+        entry1 = create_dog_dictionary_entry(import_request)
+        entry2 = create_cat_dictionary_entry(import_request)
+
+        InvertedIndexEntry.objects.create(
+            index_word_text="dog",
+            dictionary_entry=entry1,
+            start_position=0,
+            end_position=3,
+            weight=0.5,
+            index_column='en_text',
+        )
+
+        InvertedIndexEntry.objects.create(
+            index_word_text="cat",
+            dictionary_entry=entry2,
+            start_position=0,
+            end_position=3,
+            weight=0.5,
+            index_column='en_text',
+        )
+
+        response = self.client.get(reverse("searcher:index"), {'query': "dog"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "犬")
+        self.assertNotContains(response, "猫")
+
+    def test_post_redirect(self):
+        response = self.client.post(reverse("searcher:index"), {'query': "dog"}, follow=True)
+        self.assertEqual(response.status_code, 200)
