@@ -30,7 +30,7 @@ class SearchView(View):
                 sequence_number=sequence_number,
             )]
             total_matches = 1
-            matches_all_entries = True
+            should_highlight = False
         else:
             matching_entries, search_terms, total_matches = queries.search_entries(
                 query=form.cleaned_data['query'],
@@ -38,9 +38,9 @@ class SearchView(View):
                 page=request.GET.get('page'),
             )
 
-            matches_all_entries = len(search_terms) == 0
+            should_highlight = len(search_terms) > 0
 
-        if not matches_all_entries:
+        if should_highlight:
             matching_entries_jp_text_highlighted = queries.get_matching_entries_data_highlighted(
                 matching_entries, search_terms, 'jp_text',
             )
@@ -54,7 +54,7 @@ class SearchView(View):
 
         return render(request, 'searcher/index.html', {
             'form': form,
-            'matches_all_entries': matches_all_entries,
+            'should_highlight': should_highlight,
             'paginated_matching_entries': matching_entries,
             'total_matches': total_matches,
             'site_url': settings.SITE_URL,
