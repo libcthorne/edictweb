@@ -90,8 +90,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'edictweb',
-        'USER': 'django',
-        'PASSWORD': 'django',
+        'USER': os.environ.get('DJANGO_DB_USER', 'django'),
+        'PASSWORD': os.environ.get('DJANGO_DB_PASSWORD', 'django'),
         'HOST': '127.0.0.1',
         'PORT': '5432',
     }
