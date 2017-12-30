@@ -85,7 +85,7 @@
   - name: Create a new database with name "edictweb"
     postgresql_db:
       name: edictweb
-    become: true
+    become: yes
     become_user: postgres
 
   - name: Create django postgres user
@@ -95,5 +95,29 @@
       password: "{{ db_password }}"
       priv: ALL
       role_attr_flags: CREATEDB
-    become: true
+    become: yes
     become_user: postgres
+
+  - name: Ensure PostgreSQL is listening on all localhost
+    lineinfile: dest=/var/lib/pgsql/data/postgresql.conf
+      regexp='^#?listen_addresses\s*='
+      line="listen_addresses = '127.0.0.1'"
+      state=present
+    become: yes
+    become_user: root
+    notify: restart postgresql
+
+  - name: Set PostgreSQL login to md5 based for local connections (IPv4)
+    lineinfile: dest=/var/lib/pgsql/data/pg_hba.conf
+                regexp='host\s+all\s+all\s+127.0.0.1/32\s+'
+                line='host all all 127.0.0.1/32 md5'
+                insertbefore=BOF
+    become: yes
+    become_user: root
+    notify: restart postgresql
+
+  handlers:
+  - name: restart postgresql
+    service: name=postgresql state=restarted
+    become: yes
+    become_user: root
