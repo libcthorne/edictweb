@@ -1,25 +1,51 @@
 ---
 - hosts: all
+  vars_files:
+    - os_vars/{{ ansible_distribution }}.yml
   tasks:
+  - name: Install the 'Development tools' package group
+    yum:
+      name: "@Development tools"
+      state: present
+    become: yes
+    become_user: root
+    when: ansible_distribution == "CentOS"
+
   - name: Install Python extras
-    apt: name={{item}} state=present
+    package: name={{item}} state=present
     with_items:
       - python-pip
       - python-virtualenv
-      - python-dev
-      - python3-dev
+      - "{{ python2_dev_package }}"
+      - "{{ python3_dev_package }}"
       - ipython
     become: yes
     become_user: root
 
   - name: Install postgresql
-    apt: name={{item}} state=present
+    package: name={{item}} state=present
     with_items:
-      - postgresql
       - postgresql-contrib
-      - libpq-dev
+      - "{{ psql_dev_package }}"
+      - "{{ psql_lib_package }}"
+      - "{{ psql_server_package }}"
     become: yes
     become_user: root
+
+  - name: Initiate database
+    command: postgresql-setup initdb
+             creates=/var/lib/pgsql/data/postgresql.conf
+    become: yes
+    become_user: root
+    when: ansible_distribution == "CentOS"
+
+  - name: Start PostgreSQL and enable at boot
+    service: name=postgresql
+             enabled=yes
+             state=started
+    become: yes
+    become_user: root
+    when: ansible_distribution == "CentOS"
 
   - name: Install psycopg2 (for postgresql ansible modules)
     pip:
@@ -28,7 +54,7 @@
     become_user: root
 
   - name: Install RabbitMQ (for Celery)
-    apt: name={{item}} state=present
+    package: name={{item}} state=present
     with_items:
       - rabbitmq-server
     become: yes
@@ -49,17 +75,12 @@
     become_user: root
 
   - name: Install libjpeg (for Python's Pillow library, required for Django ImageField)
-    apt: name={{item}} state=present
+    package: name={{item}} state=present
     with_items:
-      - libjpeg8-dev
+      - "{{ jpeg_lib_package }}"
+      - "{{ zlib_dev_package }}"
     become: yes
     become_user: root
-
-  - name: Setup development virtualenv
-    pip:
-      requirements: /vagrant/requirements.txt
-      virtualenv: /home/vagrant/env
-      virtualenv_python: python3
 
   - name: Create a new database with name "edictweb"
     postgresql_db:
@@ -70,14 +91,9 @@
   - name: Create django postgres user
     postgresql_user:
       db: edictweb
-      name: django
-      password: django
+      name: "{{ db_user }}"
+      password: "{{ db_password }}"
       priv: ALL
       role_attr_flags: CREATEDB
     become: true
     become_user: postgres
-
-  - name: Add startup command
-    lineinfile:
-      path: /home/vagrant/.bashrc
-      line: 'source /home/vagrant/env/bin/activate && cd /vagrant'

@@ -1,0 +1,8 @@
+---
+jpeg_lib_package: libjpeg8-dev
+psql_dev_package:
+psql_lib_package: libpq-dev
+psql_server_package: postgresql
+python2_dev_package: python-dev
+python3_dev_package: python3-dev
+zlib_dev_package: zlib1g-dev

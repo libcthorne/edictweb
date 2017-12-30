@@ -1,0 +1,15 @@
+---
+- import_playbook: playbook-base.yml
+
+- hosts: vagrant
+  tasks:
+  - name: Setup development virtualenv
+    pip:
+      requirements: /vagrant/requirements.txt
+      virtualenv: /home/vagrant/env
+      virtualenv_python: python3
+
+  - name: Add startup command
+    lineinfile:
+      path: /home/vagrant/.bashrc
+      line: 'source /home/vagrant/env/bin/activate && cd /vagrant'

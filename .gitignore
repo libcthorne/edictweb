@@ -2,7 +2,8 @@
 uploads
 
 # Ansible
-playbook.retry
+playbook*.retry
+group_vars/production
 
 # Vagrant
 /.vagrant

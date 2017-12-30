@@ -1,0 +1,17 @@
+---
+- import_playbook: playbook-base.yml
+
+- hosts: production
+  vars_files:
+    - os_vars/{{ ansible_distribution }}.yml
+  tasks:
+  - git:
+      repo: 'https://github.com/libcthorne/edictweb.git'
+      dest: /var/www/edictweb
+      version: master
+
+  - name: Setup virtualenv
+    pip:
+      requirements: /var/www/edictweb/requirements.txt
+      virtualenv: /var/www/edictweb/env
+      virtualenv_python: python3
