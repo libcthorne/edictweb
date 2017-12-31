@@ -19,7 +19,7 @@ from importer.models import (
 )
 from importer.util import normalize_query, normalize_word
 
-def search_entries(query, paginate=True, page=None):
+def search_entries(query, paginate=True, page=None, in_memory_search=False):
     query = normalize_query(query)
     if not query:
         search_terms = []
@@ -27,37 +27,44 @@ def search_entries(query, paginate=True, page=None):
         matching_entries = matching_entries.order_by('id')
     else:
         search_terms = [normalize_word(word) for word in query.split(' ')]
-        index_entries = InvertedIndexEntry.objects.\
-                        filter(index_word_text__in=search_terms).\
-                        select_related('dictionary_entry').\
-                        order_by('dictionary_entry_id')
 
-        if index_entries:
-            # Build map of search term -> dictionary entries and entry -> weight
-            search_term_to_entries = defaultdict(set)
-            entry_id_to_weight = Counter()
-            for index_entry in index_entries:
-                dictionary_entry = index_entry.dictionary_entry
-                search_term_to_entries[index_entry.index_word_text].add(
-                    dictionary_entry
-                )
-                entry_id_to_weight[dictionary_entry.id] += index_entry.weight
-
-            # Find dictionary entries matching all search terms
-            matching_entries = list(
-                functools.reduce(
-                    lambda s1, s2: s1 & s2,
-                    search_term_to_entries.values()
-                )
-            )
-
-            # Sort entries by weight
-            matching_entries.sort(
-                key=lambda entry: entry_id_to_weight[entry.id],
-                reverse=True
-            )
+        if not in_memory_search:
+            matching_entries = DictionaryEntry.objects.\
+                               filter(invertedindexentry__index_word_text__in=search_terms).\
+                               annotate(num_matches=Count('id')).\
+                               order_by('-num_matches', 'id')
         else:
-            matching_entries = []
+            index_entries = InvertedIndexEntry.objects.\
+                            filter(index_word_text__in=search_terms).\
+                            select_related('dictionary_entry').\
+                            order_by('dictionary_entry_id')
+
+            if index_entries:
+                # Build map of search term -> dictionary entries and entry -> weight
+                search_term_to_entries = defaultdict(set)
+                entry_id_to_weight = Counter()
+                for index_entry in index_entries:
+                    dictionary_entry = index_entry.dictionary_entry
+                    search_term_to_entries[index_entry.index_word_text].add(
+                        dictionary_entry
+                    )
+                    entry_id_to_weight[dictionary_entry.id] += index_entry.weight
+
+                # Find dictionary entries matching all search terms
+                matching_entries = list(
+                    functools.reduce(
+                        lambda s1, s2: s1 & s2,
+                        search_term_to_entries.values()
+                    )
+                )
+
+                # Sort entries by weight
+                matching_entries.sort(
+                    key=lambda entry: entry_id_to_weight[entry.id],
+                    reverse=True
+                )
+            else:
+                matching_entries = []
 
     if paginate:
         paginator = Paginator(matching_entries, per_page=20)
