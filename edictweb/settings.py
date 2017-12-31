@@ -174,4 +174,4 @@ STATICFILES_DIRS = [
 
 # Site URL for link generation
 
-SITE_URL = "http://localhost:8000"
+SITE_URL = os.environ.get('DJANGO_SITE_URL', 'http://localhost:8000')
