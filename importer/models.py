@@ -42,7 +42,7 @@ class DictionaryEntry(models.Model):
         return self.jp_text + "|" + self.en_text
 
 class InvertedIndexEntry(models.Model):
-    index_word_text = models.CharField(max_length=128, db_index=True)
+    index_word_text = models.CharField(max_length=256, db_index=True)
 
     # Foreign key constraint with ON DELETE CASCADE manually set
     # See migration 0015_auto_20171031_2020.py
