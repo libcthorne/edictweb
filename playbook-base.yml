@@ -106,6 +106,7 @@
     become: yes
     become_user: root
     notify: restart postgresql
+    when: ansible_distribution == "CentOS"
 
   - name: Set PostgreSQL login to md5 based for local connections (IPv4)
     lineinfile: dest=/var/lib/pgsql/data/pg_hba.conf
@@ -115,6 +116,7 @@
     become: yes
     become_user: root
     notify: restart postgresql
+    when: ansible_distribution == "CentOS"
 
   handlers:
   - name: restart postgresql
