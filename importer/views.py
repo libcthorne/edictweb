@@ -1,3 +1,5 @@
+import os
+
 from django import forms
 from django.contrib.auth.decorators import user_passes_test
 from django.db import transaction
@@ -10,6 +12,7 @@ from django.shortcuts import (
 from django.utils.decorators import method_decorator
 from django.views import View
 
+from edictweb.settings import BASE_DIR
 from .forms import DictionaryUploadForm
 from .models import (
     DictionaryEntry,
@@ -17,7 +20,7 @@ from .models import (
     PendingDictionaryImportRequest,
 )
 
-EDICT2_FILE = 'edict2'
+EDICT2_FILE = os.path.join(BASE_DIR, 'edict2')
 
 user_is_staff = user_passes_test(lambda u: u.is_staff, login_url='accounts:staff-login-prompt')
 
