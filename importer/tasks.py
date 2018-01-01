@@ -69,8 +69,6 @@ def _build_index_entries(dictionary_entry, descriptions, index_column):
     determine where a description match occurs for highlighting
     purposes.
     """
-    #print("Build index entries for %s from %s" % (dictionary_entry, descriptions))
-
     index_context = getattr(dictionary_entry, index_column)
 
     # Keep track of the previous word's start_position to enable
@@ -81,7 +79,7 @@ def _build_index_entries(dictionary_entry, descriptions, index_column):
     # Collection of index entries built
     entries = []
 
-    for raw_description in descriptions:
+    for description_index, raw_description in enumerate(descriptions):
         description = normalize_query(raw_description)
         description_words = description.split(' ')
         for raw_word in description_words:
@@ -97,14 +95,14 @@ def _build_index_entries(dictionary_entry, descriptions, index_column):
                 word_ngram = word[:i+1]
                 end_position = start_position+len(word_ngram)
 
+                # Earlier descriptions should have larger weight (capped at 3)
+                weight = max(3-description_index, 1)
+                # Exact matches should have larger weight
                 # Partial matches should have smaller weight
-                weight = len(word_ngram)/len(word)
+                match_rate = len(word_ngram)/len(word)
+                weight *= 3 if match_rate == 1 else match_rate
                 # Matches in a long description should have smaller weight
                 weight /= len(description_words)
-                # More descriptions should reduce the weight of a single description match
-                weight /= len(descriptions)
-
-                #print("Indexing %s under %s (start:%d, end:%d, weight:%s)" % (index_context, word_ngram, start_position, end_position, weight))
 
                 inverted_index_entry = InvertedIndexEntry(
                     index_word_text=word_ngram,

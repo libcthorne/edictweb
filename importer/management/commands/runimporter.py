@@ -15,6 +15,7 @@ from importer.tasks import index_dictionary_entry_by_id
 from importer.util import sequence_number_from_str
 
 DICTIONARY_FILE = 'edict2'
+EDICT_ENTRY_INDEX_REGEX = re.compile("\([0-9]*\) ")
 EDICT_METADATA_REGEX = re.compile("((\([a-z][a-z0-9-,]*\) )+(\{[a-z0-9-,]+\} )*)")
 EDICT_P_GLOSS_REGEX = re.compile("/\(P\)$")
 IMPORT_REQUEST_POLL_INTERVAL = 5
@@ -83,6 +84,8 @@ class Command(BaseCommand):
                 jp_text = jp_text.replace("]", "") # convert kana readings into same form as kanji forms
 
                 # Format EN text to make indexing simpler
+                en_text = EDICT_ENTRY_INDEX_REGEX.sub("", en_text) # remove entry indices (e.g. (1), (2))
+                en_text = EDICT_METADATA_REGEX.sub("", en_text) # remove metadata (e.g. (n))
                 en_text = EDICT_P_GLOSS_REGEX.sub("", en_text) # remove trailing (P) glosses
 
                 # Create and save new entry
