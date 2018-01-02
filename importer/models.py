@@ -30,12 +30,11 @@ class DictionaryEntry(models.Model):
     @property
     def meta_labels(self):
         meta_labels = set()
-        meta_text_stripped = re.sub("[\(\){}]", "", self.meta_text)
-        meta_text_groups = meta_text_stripped.split(" ")
-        for meta_text_group in meta_text_groups:
-            meta_infos = meta_text_group.split(",")
-            for meta_info in meta_infos:
-                meta_labels.add(meta_info_to_label(meta_info))
+        meta_infos = self.meta_text.split(";")
+        for meta_info in meta_infos:
+            meta_label = meta_info_to_label(meta_info)
+            if meta_label:
+                meta_labels.add(meta_label)
         return meta_labels
 
     def __str__(self):

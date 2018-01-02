@@ -9,8 +9,9 @@ group_vars/production
 # Vagrant
 /.vagrant
 
-# EDICT2 file
+# Dictionary files
 edict2
+JMdict_e
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

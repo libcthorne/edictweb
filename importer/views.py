@@ -20,7 +20,7 @@ from .models import (
     PendingDictionaryImportRequest,
 )
 
-EDICT2_FILE = os.path.join(BASE_DIR, 'edict2')
+DICTIONARY_FILE = os.path.join(BASE_DIR, 'JMdict_e')
 
 user_is_staff = user_passes_test(lambda u: u.is_staff, login_url='accounts:staff-login-prompt')
 
@@ -55,7 +55,7 @@ class DictionaryImport(View):
 
             source_file = request.FILES['dictionary_file']
 
-            with open(EDICT2_FILE, 'wb') as destination_file:
+            with open(DICTIONARY_FILE, 'wb') as destination_file:
                 for chunk in source_file.chunks():
                     destination_file.write(chunk)
 

@@ -1,7 +1,6 @@
-import codecs
-import re
 import time
 from datetime import datetime
+from xml.etree.ElementTree import iterparse
 
 from django.core.management.base import BaseCommand
 from django.db import IntegrityError
@@ -12,13 +11,44 @@ from importer.models import (
     PendingDictionaryImportRequest,
 )
 from importer.tasks import index_dictionary_entry_by_id
-from importer.util import sequence_number_from_str
 
-DICTIONARY_FILE = 'edict2'
-EDICT_ENTRY_INDEX_REGEX = re.compile("\([0-9]*\) ")
-EDICT_METADATA_REGEX = re.compile("((\([a-z][a-z0-9-,]*\) )+(\{[a-z0-9-,]+\} )*)")
-EDICT_P_GLOSS_REGEX = re.compile("/\(P\)$")
+DICTIONARY_FILE = 'JMdict_e'
 IMPORT_REQUEST_POLL_INTERVAL = 5
+
+def parse_entry(elem):
+    sequence_number = int(elem.find("ent_seq").text)
+    en_text = ""
+    jp_text = ""
+    meta_text = ""
+
+    kanji_elems = elem.findall("k_ele")
+    for kanji_elem in kanji_elems:
+        kanji = kanji_elem.find("keb").text
+        jp_text += kanji
+        jp_text += ";"
+
+    reading_elems = elem.findall("r_ele")
+    for index, reading_elem in enumerate(reading_elems):
+        reading = reading_elem.find("reb").text
+        jp_text += reading
+        if index+1 < len(reading_elems):
+            jp_text += ";"
+
+    sense_elems = elem.findall("sense")
+    for index, sense_elem in enumerate(sense_elems):
+        pos_elems = sense_elem.findall("pos")
+        for index, pos_elem in enumerate(pos_elems):
+            meta_text += pos_elem.text
+            if index+1 < len(pos_elems):
+                meta_text += ";"
+
+        gloss_elems = sense_elem.findall("gloss")
+        for index, gloss_elem in enumerate(gloss_elems):
+            en_text += gloss_elem.text
+            if index+1 < len(gloss_elems):
+                en_text += "/"
+
+    return sequence_number, en_text, jp_text, meta_text
 
 class Command(BaseCommand):
     help = 'Polls for and processes dictionary import requests'
@@ -53,58 +83,40 @@ class Command(BaseCommand):
 
         import_start_time = datetime.now()
 
-        # Read and save new dictionary entries
-        with codecs.open(DICTIONARY_FILE, 'r', encoding='euc-jp') as f:
-            # Read and ignore header
-            header_line = f.readline()
+        context = iterparse(DICTIONARY_FILE, events=("start", "end"))
+        context = iter(context)
+        _, root = next(context)
+        entry_index = 0
+        for event, elem in context:
+            if event == "start":
+                continue
 
-            # Count and save total number of entries
-            first_entry_pos = f.tell()
-            total_entry_lines = sum(1 for l in f)
-            import_request = DictionaryImportRequest.objects.get(id=import_request_id)
-            import_request.total_entries_count = total_entry_lines
-            import_request.save()
+            if elem.tag != "entry":
+                continue
 
-            # Read entry lines
-            f.seek(first_entry_pos)
-            for entry_index, entry_line in enumerate(f):
-                edict_data, sequence_number_str, _ = entry_line.rsplit('/', 2)
-                sequence_number = sequence_number_from_str(sequence_number_str)
+            sequence_number, en_text, jp_text, meta_text = parse_entry(elem)
 
-                # Split JP/EN/meta text
-                jp_text, en_text = edict_data.split(' /', 1)
-                meta_text_matches = EDICT_METADATA_REGEX.findall(en_text)
-                meta_text = ""
-                for meta_text_match in meta_text_matches:
-                    meta_text += meta_text_match[0]
-                meta_text = meta_text.rstrip()
+            # Create and save new entry
+            entry = DictionaryEntry(
+                jp_text=jp_text,
+                en_text=en_text,
+                meta_text=meta_text,
+                sequence_number=sequence_number,
+                source_import_request=import_request,
+            )
+            entry.save()
+            self.stdout.write("[Request %d] Saved %d entry lines" % (import_request_id, entry_index+1))
 
-                # Format JP text to make indexing simpler
-                jp_text = jp_text.replace(" [", ";") # convert kana readings into same form as kanji forms
-                jp_text = jp_text.replace("]", "") # convert kana readings into same form as kanji forms
+            # Add to index
+            index_dictionary_entry_by_id.apply_async(args=(entry.id,))
 
-                # Format EN text to make indexing simpler
-                en_text = EDICT_ENTRY_INDEX_REGEX.sub("", en_text) # remove entry indices (e.g. (1), (2))
-                en_text = EDICT_METADATA_REGEX.sub("", en_text) # remove metadata (e.g. (n))
-                en_text = EDICT_P_GLOSS_REGEX.sub("", en_text) # remove trailing (P) glosses
+            # Log progress
+            self.stdout.write("[Request %d] Progress: %d entries saved" % (import_request_id, entry_index+1))
 
-                # Create and save new entry
-                entry = DictionaryEntry(
-                    jp_text=jp_text,
-                    en_text=en_text,
-                    meta_text=meta_text,
-                    sequence_number=sequence_number,
-                    source_import_request=import_request,
-                )
-                entry.save()
-                self.stdout.write("[Request %d] Saved %d/%d entry lines" % (import_request_id, entry_index+1, total_entry_lines))
+            # Remove entry from root tree to keep memory usage low
+            root.clear()
 
-                # Add to index
-                index_dictionary_entry_by_id.apply_async(args=(entry.id,))
-
-                # Log progress
-                progress = (entry_index+1)/total_entry_lines
-                self.stdout.write("[Request %d] Progress: %.2f%%" % (import_request_id, progress*100))
+            entry_index += 1
 
         # Request finished, mark as completed
         import_request = DictionaryImportRequest.objects.get(id=import_request_id)
@@ -121,6 +133,6 @@ class Command(BaseCommand):
 
         self.stdout.write("[Request %d] Finished dictionary file import in (entries: %d, duration: %s)" % (
             import_request_id,
-            total_entry_lines,
+            entry_index,
             import_duration,
         ))
