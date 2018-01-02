@@ -17,7 +17,7 @@ class DictionaryEntryTests(TestCase):
         entry = DictionaryEntry.objects.create(
             jp_text="犬",
             en_text="dog",
-            meta_text="(n) (uk) {animal}",
+            meta_text="n;uk;animal",
             sequence_number=100,
             source_import_request=create_stub_import_request(),
         )
@@ -32,7 +32,7 @@ class DictionaryEntryTests(TestCase):
         entry = DictionaryEntry.objects.create(
             jp_text="犬",
             en_text="dog",
-            meta_text="(n)",
+            meta_text="n",
             sequence_number=100,
             source_import_request=create_stub_import_request(),
         )
