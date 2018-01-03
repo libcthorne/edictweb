@@ -22,6 +22,7 @@ class DictionaryEntry(models.Model):
     en_text = models.CharField(max_length=2048)
     meta_text = models.CharField(max_length=2048)
     sequence_number = models.PositiveIntegerField(db_index=True)
+    frequency_rank = models.IntegerField(null=True)
 
     # Foreign key constraint with ON DELETE CASCADE manually set
     # See migration 0015_auto_20171031_2020.py

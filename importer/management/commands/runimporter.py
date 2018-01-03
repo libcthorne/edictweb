@@ -1,4 +1,5 @@
 import time
+import re
 from datetime import datetime
 from xml.etree.ElementTree import iterparse
 
@@ -15,11 +16,24 @@ from importer.tasks import index_dictionary_entry_by_id
 DICTIONARY_FILE = 'JMdict_e'
 IMPORT_REQUEST_POLL_INTERVAL = 5
 
+FREQUENCY_STRING_REGEX = re.compile("nf[0-9][0-9]")
+
+def parse_frequency_rank(priority_elems):
+    for priority_elem in priority_elems:
+        priority_str = priority_elem.text
+
+        if not FREQUENCY_STRING_REGEX.search(priority_str):
+            # ignore priority strings that aren't about frequency
+            continue
+
+        return int(priority_str[2:])
+
 def parse_entry(elem):
     sequence_number = int(elem.find("ent_seq").text)
     en_text = ""
     jp_text = ""
     meta_text = ""
+    min_frequency_rank = None
 
     kanji_elems = elem.findall("k_ele")
     for kanji_elem in kanji_elems:
@@ -27,12 +41,24 @@ def parse_entry(elem):
         jp_text += kanji
         jp_text += ";"
 
+        frequency_rank = parse_frequency_rank(kanji_elem.findall("ke_pri"))
+        if min_frequency_rank is not None:
+            min_frequency_rank = min(frequency_rank, min_frequency_rank)
+        else:
+            min_frequency_rank = frequency_rank
+
     reading_elems = elem.findall("r_ele")
     for index, reading_elem in enumerate(reading_elems):
         reading = reading_elem.find("reb").text
         jp_text += reading
         if index+1 < len(reading_elems):
             jp_text += ";"
+
+        frequency_rank = parse_frequency_rank(reading_elem.findall("re_pri"))
+        if min_frequency_rank is not None:
+            min_frequency_rank = min(frequency_rank, min_frequency_rank)
+        else:
+            min_frequency_rank = frequency_rank
 
     sense_elems = elem.findall("sense")
     for index, sense_elem in enumerate(sense_elems):
@@ -48,7 +74,7 @@ def parse_entry(elem):
             if index+1 < len(gloss_elems):
                 en_text += "/"
 
-    return sequence_number, en_text, jp_text, meta_text
+    return sequence_number, en_text, jp_text, meta_text, min_frequency_rank
 
 class Command(BaseCommand):
     help = 'Polls for and processes dictionary import requests'
@@ -94,13 +120,20 @@ class Command(BaseCommand):
             if elem.tag != "entry":
                 continue
 
-            sequence_number, en_text, jp_text, meta_text = parse_entry(elem)
+            (
+                sequence_number,
+                en_text,
+                jp_text,
+                meta_text,
+                min_frequency_rank,
+            ) = parse_entry(elem)
 
             # Create and save new entry
             entry = DictionaryEntry(
                 jp_text=jp_text,
                 en_text=en_text,
                 meta_text=meta_text,
+                frequency_rank=min_frequency_rank,
                 sequence_number=sequence_number,
                 source_import_request=import_request,
             )
