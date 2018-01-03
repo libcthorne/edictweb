@@ -79,7 +79,7 @@ def _build_index_entries(dictionary_entry, descriptions, index_column):
     # Collection of index entries built
     entries = []
 
-    for description_index, raw_description in enumerate(descriptions):
+    for raw_description in descriptions:
         description = normalize_query(raw_description)
         description_words = description.split(' ')
         for raw_word in description_words:
@@ -95,14 +95,26 @@ def _build_index_entries(dictionary_entry, descriptions, index_column):
                 word_ngram = word[:i+1]
                 end_position = start_position+len(word_ngram)
 
-                # Earlier descriptions should have larger weight (capped at 3)
-                weight = max(3-description_index, 1)
+                weight = 1.0
+
                 # Exact matches should have larger weight
                 # Partial matches should have smaller weight
                 match_rate = len(word_ngram)/len(word)
                 weight *= 3 if match_rate == 1 else match_rate
+
                 # Matches in a long description should have smaller weight
                 weight /= len(description_words)
+
+                # Common words should have larger weight
+                if dictionary_entry.frequency_rank:
+                    frequency_scale = max(
+                        0.3,
+                        max(51-dictionary_entry.frequency_rank, 1)/50
+                    )
+                else:
+                    frequency_scale = 0.3
+
+                weight *= frequency_scale
 
                 inverted_index_entry = InvertedIndexEntry(
                     index_word_text=word_ngram,
