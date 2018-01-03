@@ -42,10 +42,11 @@ def parse_entry(elem):
         jp_text += ";"
 
         frequency_rank = parse_frequency_rank(kanji_elem.findall("ke_pri"))
-        if min_frequency_rank is not None:
-            min_frequency_rank = min(frequency_rank, min_frequency_rank)
-        else:
-            min_frequency_rank = frequency_rank
+        if frequency_rank is not None:
+            if min_frequency_rank is not None:
+                min_frequency_rank = min(frequency_rank, min_frequency_rank)
+            else:
+                min_frequency_rank = frequency_rank
 
     reading_elems = elem.findall("r_ele")
     for index, reading_elem in enumerate(reading_elems):
@@ -55,10 +56,11 @@ def parse_entry(elem):
             jp_text += ";"
 
         frequency_rank = parse_frequency_rank(reading_elem.findall("re_pri"))
-        if min_frequency_rank is not None:
-            min_frequency_rank = min(frequency_rank, min_frequency_rank)
-        else:
-            min_frequency_rank = frequency_rank
+        if frequency_rank is not None:
+            if min_frequency_rank is not None:
+                min_frequency_rank = min(frequency_rank, min_frequency_rank)
+            else:
+                min_frequency_rank = frequency_rank
 
     sense_elems = elem.findall("sense")
     for sense_index, sense_elem in enumerate(sense_elems):
