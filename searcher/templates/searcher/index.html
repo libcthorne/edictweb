@@ -32,6 +32,11 @@
 				<h6>{{ entry.en_text }}</h6>
 			{% endif %}
 
+			Weight: {{ entry.weight }}
+			{% if entry.frequency_rank %}
+				Freq: {{ entry.frequency_rank }}
+			{% endif %}
+
 			<div class="clearfix">
 				{% for label in entry.meta_labels %}
 					<span class="badge badge-primary">{{ label }}</span>
