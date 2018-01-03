@@ -61,18 +61,21 @@ def parse_entry(elem):
             min_frequency_rank = frequency_rank
 
     sense_elems = elem.findall("sense")
-    for index, sense_elem in enumerate(sense_elems):
+    for sense_index, sense_elem in enumerate(sense_elems):
         pos_elems = sense_elem.findall("pos")
-        for index, pos_elem in enumerate(pos_elems):
+        for pos_index, pos_elem in enumerate(pos_elems):
             meta_text += pos_elem.text
-            if index+1 < len(pos_elems):
+            if pos_index+1 < len(pos_elems):
                 meta_text += ";"
 
         gloss_elems = sense_elem.findall("gloss")
-        for index, gloss_elem in enumerate(gloss_elems):
+        for gloss_index, gloss_elem in enumerate(gloss_elems):
             en_text += gloss_elem.text
-            if index+1 < len(gloss_elems):
+            if gloss_index+1 < len(gloss_elems):
                 en_text += "/"
+
+        if sense_index+1 < len(sense_elems):
+            en_text += "/"
 
     return sequence_number, en_text, jp_text, meta_text, min_frequency_rank
 
