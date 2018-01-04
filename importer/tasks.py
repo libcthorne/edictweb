@@ -108,7 +108,7 @@ def _build_index_entries(dictionary_entry, descriptions, index_column):
                 # Common words should have larger weight
                 if dictionary_entry.frequency_rank:
                     frequency_scale = max(51-dictionary_entry.frequency_rank, 1)/50
-                    weight += 1.5*frequency_scale
+                    weight += 2*frequency_scale
 
                 inverted_index_entry = InvertedIndexEntry(
                     index_word_text=word_ngram,
