@@ -7,9 +7,10 @@ from django.core.paginator import (
     Paginator,
 )
 from django.db.models import (
+    Count,
     F,
     IntegerField,
-    Max,
+    Sum,
     Value,
 )
 
@@ -29,7 +30,9 @@ def search_entries(query, paginate=True, page=None):
         search_terms = [normalize_word(word) for word in query.split(' ')]
         matching_entries = DictionaryEntry.objects.\
                            filter(invertedindexentry__index_word_text__in=search_terms).\
-                           annotate(weight=Max('invertedindexentry__weight')).\
+                           annotate(weight=Sum('invertedindexentry__weight')).\
+                           annotate(terms_matched=Count('invertedindexentry__index_word_text', distinct=True)).\
+                           filter(terms_matched=len(search_terms)).\
                            order_by('-weight', 'id')
 
     if paginate:
