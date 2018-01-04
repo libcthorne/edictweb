@@ -14,7 +14,10 @@ from django.views import View
 from edictweb import settings
 from importer.models import DictionaryEntry
 
-from . import queries
+from . import (
+    queries,
+    util,
+)
 from .forms import SearchForm
 
 class SearchView(View):
@@ -37,14 +40,13 @@ class SearchView(View):
                 paginate=True,
                 page=request.GET.get('page'),
             )
-
             should_highlight = len(search_terms) > 0
 
         if should_highlight:
-            matching_entries_jp_text_highlighted = queries.get_matching_entries_data_highlighted(
+            matching_entries_jp_text_highlighted = util.get_matching_entries_data_highlighted(
                 matching_entries, search_terms, 'jp_text',
             )
-            matching_entries_en_text_highlighted = queries.get_matching_entries_data_highlighted(
+            matching_entries_en_text_highlighted = util.get_matching_entries_data_highlighted(
                 matching_entries, search_terms, 'en_text',
             )
 

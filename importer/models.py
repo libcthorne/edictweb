@@ -48,16 +48,10 @@ class InvertedIndexEntry(models.Model):
     # See migration 0015_auto_20171031_2020.py
     dictionary_entry = models.ForeignKey(DictionaryEntry, on_delete=models.CASCADE, db_constraint=False)
 
-    start_position = models.PositiveIntegerField()
-    end_position = models.PositiveIntegerField()
-
     weight = models.FloatField()
 
-    index_column = models.CharField(max_length=128)
-
     def __str__(self):
-        return "Index of '{}' for {} on column {}".format(
+        return "Index of '{}' for {}".format(
             self.index_word_text,
             self.dictionary_entry,
-            self.index_column,
         )

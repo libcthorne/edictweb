@@ -44,10 +44,7 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
     en_text_glosses = en_text.split("/")
 
     # Build index entries from forms and glosses
-    entries = (
-        _build_index_entries(dictionary_entry, jp_text_forms, 'jp_text')
-        + _build_index_entries(dictionary_entry, en_text_glosses, 'en_text')
-    )
+    entries = _build_index_entries(dictionary_entry, jp_text_forms + en_text_glosses)
 
     # Save index entries
     save_start = datetime.now()
@@ -56,28 +53,16 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
 
     print("Saved {} index entries in {}".format(len(entries), save_end-save_start))
 
-def _build_index_entries(dictionary_entry, descriptions, index_column):
+def _build_index_entries(dictionary_entry, descriptions):
     """
     Builds InvertedIndexEntry objects for a given dictionary entry
     from a list of descriptions. Descriptions can be a list of English
     definitions ("glosses") with words separated by spaces, e.g.
     ["stray cat", "alley cat"] or a list of Japanese forms, e.g.
-    ["野良猫", "のらねこ"].
-
-    Index column is the name of the column that contains the string
-    being indexed, e.g. "jp_text" or "en_text". This string is used to
-    determine where a description match occurs for highlighting
-    purposes.
+    ["野良猫", "のらねこ"], or both combined.
     """
-    index_context = getattr(dictionary_entry, index_column)
-
-    # Keep track of the previous word's start_position to enable
-    # correct search of start_position in index_context for words
-    # contained more than once
-    prev_start_position = -1
-
-    # Collection of index entries built
-    entries = []
+    # Collection of index entries built, mapped by word
+    entries = {}
 
     for raw_description in descriptions:
         description = normalize_query(raw_description)
@@ -87,13 +72,9 @@ def _build_index_entries(dictionary_entry, descriptions, index_column):
             if not word:
                 continue # word is not indexable
 
-            start_position = index_context.index(raw_word, prev_start_position+1)
-            prev_start_position = start_position
-
             # Index each edge n-gram (i.e. quick -> q, qu, qui, quic, quick)
             for i in range(len(word)):
                 word_ngram = word[:i+1]
-                end_position = start_position+len(word_ngram)
 
                 weight = 1.0
 
@@ -110,14 +91,11 @@ def _build_index_entries(dictionary_entry, descriptions, index_column):
                     frequency_scale = max(51-dictionary_entry.frequency_rank, 1)/50
                     weight += 2*frequency_scale
 
-                inverted_index_entry = InvertedIndexEntry(
-                    index_word_text=word_ngram,
-                    dictionary_entry=dictionary_entry,
-                    start_position=start_position,
-                    end_position=end_position,
-                    weight=weight,
-                    index_column=index_column,
-                )
-                entries.append(inverted_index_entry)
+                if word_ngram not in entries or weight > entries[word_ngram].weight:
+                    entries[word_ngram] = InvertedIndexEntry(
+                        index_word_text=word_ngram,
+                        dictionary_entry=dictionary_entry,
+                        weight=weight,
+                    )
 
-    return entries
+    return list(entries.values())
