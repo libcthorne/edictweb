@@ -103,7 +103,7 @@ def _build_index_entries(dictionary_entry, descriptions, index_column):
                 weight *= 3 if match_rate == 1 else match_rate
 
                 # Matches in a long description should have smaller weight
-                weight /= len(description_words)
+                weight /= min(len(description_words), 3)
 
                 # Common words should have larger weight
                 if dictionary_entry.frequency_rank:
