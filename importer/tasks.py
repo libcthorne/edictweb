@@ -78,13 +78,16 @@ def _build_index_entries(dictionary_entry, descriptions):
 
                 weight = 1.0
 
-                # Exact matches should have larger weight
-                # Partial matches should have smaller weight
                 match_rate = len(word_ngram)/len(word)
-                weight *= 3 if match_rate == 1 else match_rate
+                if match_rate == 1:
+                    # Exact matches should have larger weight
+                    weight += 3
+                else:
+                    # Partial matches should have smaller weight
+                    weight += 1*match_rate
 
                 # Matches in a long description should have smaller weight
-                weight /= min(len(description_words), 3)
+                weight += 1*((4-min(len(description_words), 3))/3)
 
                 # Common words should have larger weight
                 if dictionary_entry.frequency_rank:
