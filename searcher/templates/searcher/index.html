@@ -38,6 +38,10 @@
 			{% endif %}
 
 			<div class="clearfix">
+				{% if entry.frequency_rank %}
+					<span class ="badge badge-success">common</span>
+				{% endif %}
+
 				{% for label in entry.meta_labels %}
 					<span class="badge badge-primary">{{ label }}</span>
 				{% endfor %}
