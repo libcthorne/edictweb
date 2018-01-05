@@ -22,6 +22,11 @@ def parse_frequency_rank(priority_elems):
     for priority_elem in priority_elems:
         priority_str = priority_elem.text
 
+        if priority_str == "ichi1":
+            return 10
+        if priority_str == "ichi2":
+            return 20
+
         if not FREQUENCY_STRING_REGEX.search(priority_str):
             # ignore priority strings that aren't about frequency
             continue
