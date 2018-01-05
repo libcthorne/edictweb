@@ -22,10 +22,10 @@
 		<div class="form-control bg-faded">
 			{% if should_highlight %}
 				<h5>
-				{% for highlight, text in entry.jp_text_highlighted %}{% if highlight %}<b>{% endif %}{{ text }}{% if highlight %}</b>{% endif %}{% endfor %}
+				{% for highlight, text in entry.jp_text_highlighted %}{% if highlight %}<mark><b>{% endif %}{{ text }}{% if highlight %}</b></mark>{% endif %}{% endfor %}
 				</h5>
 				<h6>
-				{% for highlight, text in entry.en_text_highlighted %}{% if highlight %}<b>{% endif %}{{ text }}{% if highlight %}</b>{% endif %}{% endfor %}
+				{% for highlight, text in entry.en_text_highlighted %}{% if highlight %}<mark><b>{% endif %}{{ text }}{% if highlight %}</b></mark>{% endif %}{% endfor %}
 				</h6>
 			{% else %}
 				<h5>{{ entry.jp_text }}</h5>
