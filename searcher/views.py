@@ -60,6 +60,7 @@ class SearchView(View):
             'paginated_matching_entries': matching_entries,
             'total_matches': total_matches,
             'site_url': settings.SITE_URL,
+            'debug': request.GET.get('debug'),
         })
 
     def post(self, request):

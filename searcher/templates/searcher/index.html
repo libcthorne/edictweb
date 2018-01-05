@@ -32,9 +32,12 @@
 				<h6>{{ entry.en_text }}</h6>
 			{% endif %}
 
-			Weight: {{ entry.weight }}
-			{% if entry.frequency_rank %}
-				Freq: {{ entry.frequency_rank }}
+			{% if debug %}
+				Weight: {{ entry.weight }}
+				{% if entry.frequency_rank %}
+					<br/>
+					Freq: {{ entry.frequency_rank }}
+				{% endif %}
 			{% endif %}
 
 			<div class="clearfix">
