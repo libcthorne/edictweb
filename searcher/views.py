@@ -12,6 +12,7 @@ from django.shortcuts import (
 from django.views import View
 
 from edictweb import settings
+from importer import const
 from importer.models import DictionaryEntry
 
 from . import (
@@ -44,10 +45,10 @@ class SearchView(View):
 
         if should_highlight:
             matching_entries_jp_text_highlighted = util.get_matching_entries_data_highlighted(
-                matching_entries, search_terms, 'jp_text',
+                matching_entries, search_terms, 'jp_text', const.JP_TEXT_DESCRIPTION_SEPARATOR
             )
             matching_entries_en_text_highlighted = util.get_matching_entries_data_highlighted(
-                matching_entries, search_terms, 'en_text',
+                matching_entries, search_terms, 'en_text', const.EN_TEXT_DESCRIPTION_SEPARATOR
             )
 
             for matching_entry in matching_entries:

@@ -4,6 +4,7 @@ from datetime import datetime
 import django
 from celery import Celery
 
+from importer import const
 from .util import normalize_query, normalize_word
 
 ################################################################
@@ -35,16 +36,16 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
     jp_text = dictionary_entry.jp_text
     en_text = dictionary_entry.en_text
 
-    # Split Japanese forms string into array, e.g.
+    # Split Japanese text string into descriptions
     # e.g. "〃;おなじ;おなじく" -> ["〃", "おなじ", "おなじく"]
-    jp_text_forms = jp_text.split(";")
+    jp_text_descriptions = jp_text.split(const.JP_TEXT_DESCRIPTION_SEPARATOR)
 
-    # Split English glosses string into array
+    # Split English text string into descriptons
     # e.g. "to total/to sum" -> ["to total", "to sum"]
-    en_text_glosses = en_text.split("/")
+    en_text_descriptions = en_text.split(const.EN_TEXT_DESCRIPTION_SEPARATOR)
 
     # Build index entries from forms and glosses
-    entries = _build_index_entries(dictionary_entry, [jp_text_forms, en_text_glosses])
+    entries = _build_index_entries(dictionary_entry, [jp_text_descriptions, en_text_descriptions])
 
     # Save index entries
     save_start = datetime.now()
@@ -67,7 +68,8 @@ def _build_index_entries(dictionary_entry, descriptions_collection):
     for descriptions in descriptions_collection:
         for description_index, raw_description in enumerate(descriptions):
             description = normalize_query(raw_description)
-            description_words = description.split(' ')
+            description_words = description.split(const.DESCRIPTION_WORD_SEPARATOR)
+
             for word_index, raw_word in enumerate(description_words):
                 word = normalize_word(raw_word)
                 if not word:

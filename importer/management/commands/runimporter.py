@@ -6,6 +6,7 @@ from xml.etree.ElementTree import iterparse
 from django.core.management.base import BaseCommand
 from django.db import IntegrityError
 
+from importer import const
 from importer.models import (
     DictionaryEntry,
     DictionaryImportRequest,
@@ -44,7 +45,7 @@ def parse_entry(elem):
     for kanji_elem in kanji_elems:
         kanji = kanji_elem.find("keb").text
         jp_text += kanji
-        jp_text += ";"
+        jp_text += const.JP_TEXT_DESCRIPTION_SEPARATOR
 
         frequency_rank = parse_frequency_rank(kanji_elem.findall("ke_pri"))
         if frequency_rank is not None:
@@ -58,7 +59,7 @@ def parse_entry(elem):
         reading = reading_elem.find("reb").text
         jp_text += reading
         if index+1 < len(reading_elems):
-            jp_text += ";"
+            jp_text += const.JP_TEXT_DESCRIPTION_SEPARATOR
 
         frequency_rank = parse_frequency_rank(reading_elem.findall("re_pri"))
         if frequency_rank is not None:
@@ -73,16 +74,16 @@ def parse_entry(elem):
         for pos_index, pos_elem in enumerate(pos_elems):
             meta_text += pos_elem.text
             if pos_index+1 < len(pos_elems):
-                meta_text += ";"
+                meta_text += const.META_TEXT_SEPARATOR
 
         gloss_elems = sense_elem.findall("gloss")
         for gloss_index, gloss_elem in enumerate(gloss_elems):
             en_text += gloss_elem.text
             if gloss_index+1 < len(gloss_elems):
-                en_text += "/"
+                en_text += const.EN_TEXT_DESCRIPTION_SEPARATOR
 
         if sense_index+1 < len(sense_elems):
-            en_text += "/"
+            en_text += const.EN_TEXT_DESCRIPTION_SEPARATOR
 
     return sequence_number, en_text, jp_text, meta_text, min_frequency_rank
 

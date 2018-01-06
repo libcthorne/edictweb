@@ -2,6 +2,7 @@ import re
 
 from django.db import models
 
+from . import const
 from .util import meta_info_to_label
 
 class DictionaryImportRequest(models.Model):
@@ -31,7 +32,7 @@ class DictionaryEntry(models.Model):
     @property
     def meta_labels(self):
         meta_labels = set()
-        meta_infos = self.meta_text.split(";")
+        meta_infos = self.meta_text.split(const.META_TEXT_SEPARATOR)
         for meta_info in meta_infos:
             meta_label = meta_info_to_label(meta_info)
             if meta_label:
