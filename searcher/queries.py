@@ -27,7 +27,7 @@ def search_entries(query, paginate=True, page=None):
         matching_entries = DictionaryEntry.objects.all()
         matching_entries = matching_entries.order_by('id')
     else:
-        search_terms = [normalize_word(word) for word in query.split(' ')]
+        search_terms = set(normalize_word(word) for word in query.split(' '))
         matching_entries = DictionaryEntry.objects.\
                            filter(invertedindexentry__index_word_text__in=search_terms).\
                            annotate(weight=Sum('invertedindexentry__weight')).\
