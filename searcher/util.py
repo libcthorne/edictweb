@@ -1,7 +1,7 @@
 from importer import const
 
 def get_text_highlighted(text, description_separator, search_terms):
-    highlight_info = []
+    text_highlighted = []
     descriptions = text.split(description_separator)
 
     for description_index, description in enumerate(descriptions):
@@ -22,21 +22,21 @@ def get_text_highlighted(text, description_separator, search_terms):
 
             if longest_match > 0:
                 # Highlight word up until end of longest match
-                highlight_info.append((True, word[:longest_match]))
+                text_highlighted.append((True, word[:longest_match]))
 
                 if longest_match < len(word):
                     # Don't highlight remainder of word for partial matches
-                    highlight_info.append((False, word[longest_match:]))
+                    text_highlighted.append((False, word[longest_match:]))
             else:
                 # No match, don't highlight word
-                highlight_info.append((False, word))
+                text_highlighted.append((False, word))
 
             if word_index+1 < len(words):
                 # Don't highlight word separator
-                highlight_info.append((False, const.DESCRIPTION_WORD_SEPARATOR))
+                text_highlighted.append((False, const.DESCRIPTION_WORD_SEPARATOR))
 
         if description_index+1 < len(descriptions):
             # Don't highlight description separator
-            highlight_info.append((False, description_separator))
+            text_highlighted.append((False, description_separator))
 
-    return highlight_info
+    return text_highlighted
