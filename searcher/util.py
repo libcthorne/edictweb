@@ -16,7 +16,7 @@ def get_matching_entries_data_highlighted(matching_entries, search_terms, index_
             for word_index, word in enumerate(words):
                 longest_match = 0
                 for search_term in search_terms:
-                    match_start = word.find(search_term)
+                    match_start = word.lower().find(search_term)
                     if match_start != 0:
                         # only check matches starting from first character
                         # because these are what are indexed
