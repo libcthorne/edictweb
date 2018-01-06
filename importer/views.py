@@ -35,8 +35,7 @@ class DictionaryImport(View):
             current_entries_count = DictionaryEntry.objects.\
                                     filter(source_import_request=pending_import_request.import_request).\
                                     count()
-            total_entries_count = pending_import_request.import_request.total_entries_count
-            progress = (current_entries_count/max(total_entries_count, 1))*100
+            progress = current_entries_count
             return render(request, 'importer/progress.html', {'progress': progress})
         else:
             # No import currently running
