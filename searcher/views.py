@@ -44,16 +44,17 @@ class SearchView(View):
             should_highlight = len(search_terms) > 0
 
         if should_highlight:
-            matching_entries_jp_text_highlighted = util.get_matching_entries_data_highlighted(
-                matching_entries, search_terms, 'jp_text', const.JP_TEXT_DESCRIPTION_SEPARATOR
-            )
-            matching_entries_en_text_highlighted = util.get_matching_entries_data_highlighted(
-                matching_entries, search_terms, 'en_text', const.EN_TEXT_DESCRIPTION_SEPARATOR
-            )
-
             for matching_entry in matching_entries:
-                matching_entry.jp_text_highlighted = matching_entries_jp_text_highlighted[matching_entry]
-                matching_entry.en_text_highlighted = matching_entries_en_text_highlighted[matching_entry]
+                matching_entry.jp_text_highlighted = util.get_text_highlighted(
+                    matching_entry.jp_text,
+                    const.JP_TEXT_DESCRIPTION_SEPARATOR,
+                    search_terms,
+                )
+                matching_entry.en_text_highlighted = util.get_text_highlighted(
+                    matching_entry.en_text,
+                    const.EN_TEXT_DESCRIPTION_SEPARATOR,
+                    search_terms,
+                )
 
         return render(request, 'searcher/index.html', {
             'form': form,

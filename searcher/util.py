@@ -1,49 +1,42 @@
-from collections import defaultdict
-
 from importer import const
 
-def get_matching_entries_data_highlighted(matching_entries, search_terms, index_column, description_separator):
-    matching_entries_data_highlighted = defaultdict(list)
+def get_text_highlighted(text, description_separator, search_terms):
+    highlight_info = []
+    descriptions = text.split(description_separator)
 
-    for matching_entry in matching_entries:
-        text = getattr(matching_entry, index_column)
-        descriptions = text.split(description_separator)
+    for description_index, description in enumerate(descriptions):
+        words = description.split(const.DESCRIPTION_WORD_SEPARATOR)
 
-        for description_index, description in enumerate(descriptions):
-            words = description.split(const.DESCRIPTION_WORD_SEPARATOR)
+        for word_index, word in enumerate(words):
+            longest_match = 0
 
-            for word_index, word in enumerate(words):
-                longest_match = 0
-                for search_term in search_terms:
-                    match_start = word.lower().find(search_term)
-                    if match_start != 0:
-                        # only check matches starting from first character
-                        # because these are what are indexed
-                        continue
+            for search_term in search_terms:
+                match_start = word.lower().find(search_term)
 
-                    longest_match = max(longest_match, len(search_term))
+                if match_start != 0:
+                    # Only check matches starting from first character
+                    # because these are all that are indexed
+                    continue
 
-                if longest_match > 0:
-                    matching_entries_data_highlighted[matching_entry].append((
-                        True, word[:longest_match]
-                    ))
-                    if longest_match < len(word):
-                        matching_entries_data_highlighted[matching_entry].append((
-                            False, word[longest_match:]
-                        ))
-                else:
-                    matching_entries_data_highlighted[matching_entry].append((
-                        False, word
-                    ))
+                longest_match = max(longest_match, len(search_term))
 
-                if word_index+1 < len(words):
-                    matching_entries_data_highlighted[matching_entry].append((
-                        False, const.DESCRIPTION_WORD_SEPARATOR
-                    ))
+            if longest_match > 0:
+                # Highlight word up until end of longest match
+                highlight_info.append((True, word[:longest_match]))
 
-            if description_index+1 < len(descriptions):
-                matching_entries_data_highlighted[matching_entry].append((
-                    False, description_separator
-                ))
+                if longest_match < len(word):
+                    # Don't highlight remainder of word for partial matches
+                    highlight_info.append((False, word[longest_match:]))
+            else:
+                # No match, don't highlight word
+                highlight_info.append((False, word))
 
-    return matching_entries_data_highlighted
+            if word_index+1 < len(words):
+                # Don't highlight word separator
+                highlight_info.append((False, const.DESCRIPTION_WORD_SEPARATOR))
+
+        if description_index+1 < len(descriptions):
+            # Don't highlight description separator
+            highlight_info.append((False, description_separator))
+
+    return highlight_info
