@@ -204,7 +204,7 @@ LOGGING = {
         },
         'logfile': {
             'class': 'logging.handlers.WatchedFileHandler',
-            'filename': 'logfile.log'
+            'filename': os.path.join(BASE_DIR, 'logfile.log')
         },
     },
     'loggers': {
