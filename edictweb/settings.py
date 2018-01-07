@@ -28,7 +28,10 @@ DEBUG = os.environ.get('DJANGO_DEBUG', False)
 
 INTERNAL_IPS = ['localhost', '127.0.0.1', '10.0.2.2']
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', [])
+if 'DJANGO_ALLOWED_HOSTS' in os.environ:
+    ALLOWED_HOSTS = os.environ['DJANGO_ALLOWED_HOSTS'].split('|')
+else:
+    ALLOWED_HOSTS = []
 
 
 # Application definition
