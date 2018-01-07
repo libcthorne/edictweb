@@ -181,6 +181,16 @@ STATICFILES_DIRS = [
 SITE_URL = os.environ.get('DJANGO_SITE_URL', 'http://localhost:8000')
 
 
+# Django debug toolbar
+
+def show_toolbar(request):
+    return bool(DEBUG)
+
+DEBUG_TOOLBAR_CONFIG = {
+    'SHOW_TOOLBAR_CALLBACK': 'edictweb.settings.show_toolbar',
+}
+
+
 # Logging
 
 LOGGING = {
