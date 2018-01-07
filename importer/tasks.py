@@ -19,6 +19,7 @@ django.setup()
 
 from .models import (
     DictionaryEntry,
+    DictionaryEntryMatch,
     InvertedIndexEntry,
 )
 
@@ -44,23 +45,28 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
     # e.g. "to total/to sum" -> ["to total", "to sum"]
     en_text_descriptions = en_text.split(const.EN_TEXT_DESCRIPTION_SEPARATOR)
 
-    # Build index entries from forms and glosses
-    entries = _build_index_entries(dictionary_entry, [jp_text_descriptions, en_text_descriptions])
-
-    # Save index entries
+    # Build index entries from en and jp text
     save_start = datetime.now()
-    InvertedIndexEntry.objects.bulk_create(entries)
+    entries = _build_index_entries(dictionary_entry, [jp_text_descriptions, en_text_descriptions])
+    for word_ngram, weight in entries.items():
+        InvertedIndexEntry.objects(index_word_text=word_ngram).update(
+            push__matches=DictionaryEntryMatch(
+                dictionary_entry=dictionary_entry,
+                weight=weight,
+            ),
+            upsert=True,
+        )
     save_end = datetime.now()
 
     print("Saved {} index entries in {}".format(len(entries), save_end-save_start))
 
 def _build_index_entries(dictionary_entry, descriptions_collection):
     """
-    Builds InvertedIndexEntry objects for a given dictionary entry
-    from a collection of descriptions. Descriptions can be a list of
-    English definitions ("glosses") with words separated by spaces,
-    e.g.  ["stray cat", "alley cat"] or a list of Japanese forms, e.g.
-    ["野良猫", "のらねこ"].
+    Builds index entries for a given dictionary entry from a
+    collection of descriptions. Descriptions can be a list of English
+    definitions ("glosses") with words separated by spaces, e.g.
+    ["stray cat", "alley cat"] or a list of Japanese forms, e.g.  ["野
+    良猫", "のらねこ"].
     """
     # Collection of index entries built, mapped by word
     entries = {}
@@ -103,11 +109,7 @@ def _build_index_entries(dictionary_entry, descriptions_collection):
                         frequency_scale = max(51-dictionary_entry.frequency_rank, 1)/50
                         weight += 2*frequency_scale
 
-                    if word_ngram not in entries or weight > entries[word_ngram].weight:
-                        entries[word_ngram] = InvertedIndexEntry(
-                            index_word_text=word_ngram,
-                            dictionary_entry=dictionary_entry,
-                            weight=weight,
-                        )
+                    if word_ngram not in entries or weight > entries[word_ngram]:
+                        entries[word_ngram] = weight
 
-    return list(entries.values())
+    return entries

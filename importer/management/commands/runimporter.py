@@ -10,6 +10,7 @@ from importer import const
 from importer.models import (
     DictionaryEntry,
     DictionaryImportRequest,
+    InvertedIndexEntry,
     PendingDictionaryImportRequest,
 )
 from importer.tasks import index_dictionary_entry_by_id
@@ -115,6 +116,7 @@ class Command(BaseCommand):
         # Remove existing dictionary entries
         self.stdout.write("[Request %d] Deleting existing dictionary entries" % import_request_id)
         DictionaryEntry.objects.all().delete()
+        InvertedIndexEntry.objects.all().delete()
 
         self.stdout.write("[Request %d] Starting dictionary file import" % import_request_id)
 
@@ -146,13 +148,12 @@ class Command(BaseCommand):
                 meta_text=meta_text,
                 frequency_rank=min_frequency_rank,
                 sequence_number=sequence_number,
-                source_import_request=import_request,
             )
             entry.save()
             self.stdout.write("[Request %d] Saved %d entry lines" % (import_request_id, entry_index+1))
 
             # Add to index
-            index_dictionary_entry_by_id.apply_async(args=(entry.id,))
+            index_dictionary_entry_by_id.apply_async(args=(str(entry.id),))
 
             # Log progress
             self.stdout.write("[Request %d] Progress: %d entries saved" % (import_request_id, entry_index+1))

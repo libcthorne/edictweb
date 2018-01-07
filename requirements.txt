@@ -4,5 +4,6 @@ djangorestframework
 django-debug-toolbar
 django-extensions
 django-resized
+mongoengine
 Pillow
 psycopg2

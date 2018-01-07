@@ -1,9 +1,17 @@
 import re
 
 from django.db import models
+from mongoengine import (
+    connect,
+    Document,
+    EmbeddedDocument,
+    fields as mongo_fields,
+)
 
 from . import const
 from .util import meta_info_to_label
+
+connect('dictionary_index')
 
 class DictionaryImportRequest(models.Model):
     started = models.BooleanField(default=False)
@@ -18,16 +26,12 @@ class PendingDictionaryImportRequest(models.Model):
     """
     import_request = models.OneToOneField(DictionaryImportRequest, on_delete=models.SET_NULL, null=True)
 
-class DictionaryEntry(models.Model):
-    jp_text = models.CharField(max_length=2048)
-    en_text = models.CharField(max_length=2048)
-    meta_text = models.CharField(max_length=2048)
-    sequence_number = models.PositiveIntegerField(db_index=True)
-    frequency_rank = models.IntegerField(null=True)
-
-    # Foreign key constraint with ON DELETE CASCADE manually set
-    # See migration 0015_auto_20171031_2020.py
-    source_import_request = models.ForeignKey(DictionaryImportRequest, on_delete=models.CASCADE, db_constraint=False)
+class DictionaryEntry(Document):
+    jp_text = mongo_fields.StringField(max_length=2048)
+    en_text = mongo_fields.StringField(max_length=2048)
+    meta_text = mongo_fields.StringField(max_length=2048)
+    sequence_number = mongo_fields.IntField(min_value=0)
+    frequency_rank = mongo_fields.IntField(min_value=0)
 
     @property
     def meta_labels(self):
@@ -42,17 +46,15 @@ class DictionaryEntry(models.Model):
     def __str__(self):
         return self.jp_text + "|" + self.en_text
 
-class InvertedIndexEntry(models.Model):
-    index_word_text = models.CharField(max_length=256, db_index=True)
+class DictionaryEntryMatch(EmbeddedDocument):
+    dictionary_entry = mongo_fields.ReferenceField(DictionaryEntry)
+    weight = mongo_fields.FloatField(min_value=0)
 
-    # Foreign key constraint with ON DELETE CASCADE manually set
-    # See migration 0015_auto_20171031_2020.py
-    dictionary_entry = models.ForeignKey(DictionaryEntry, on_delete=models.CASCADE, db_constraint=False)
-
-    weight = models.FloatField()
-
-    def __str__(self):
-        return "Index of '{}' for {}".format(
-            self.index_word_text,
-            self.dictionary_entry,
-        )
+class InvertedIndexEntry(Document):
+    index_word_text = mongo_fields.StringField(max_length=256)
+    matches = mongo_fields.EmbeddedDocumentListField(DictionaryEntryMatch)
+    meta = {
+        'indexes': [
+            'index_word_text',
+        ]
+    }

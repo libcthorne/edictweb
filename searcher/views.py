@@ -4,12 +4,12 @@ from django.http import (
     HttpResponseBadRequest,
 )
 from django.shortcuts import (
-    get_object_or_404,
     redirect,
     render,
     reverse,
 )
 from django.views import View
+from mongoengine import connect
 
 from edictweb import settings
 from importer import const
@@ -29,17 +29,27 @@ class SearchView(View):
 
         sequence_number = request.GET.get('seq_no')
         if sequence_number is not None:
-            matching_entries = [get_object_or_404(
-                DictionaryEntry,
-                sequence_number=sequence_number,
-            )]
+            try:
+                matching_entries = [
+                    DictionaryEntry.objects.get(
+                        sequence_number=sequence_number,
+                    )
+                ]
+            except DictionaryEntry.DoesNotExist:
+                raise Http404
+
             total_matches = 1
             should_highlight = False
         else:
+            try:
+                page = int(request.GET.get('page'))
+            except (ValueError, TypeError):
+                page = 1
+
             matching_entries, search_terms, total_matches = queries.search_entries(
                 query=form.cleaned_data['query'],
                 paginate=True,
-                page=request.GET.get('page'),
+                page=page,
             )
             should_highlight = len(search_terms) > 0
 
