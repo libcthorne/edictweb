@@ -3,6 +3,51 @@
   vars_files:
     - os_vars/{{ ansible_distribution }}.yml
   tasks:
+  - name: (Ubuntu) Install MongoDB
+    block:
+    - name: Add Mongo PPA key
+      apt_key:
+        keyserver: keyserver.ubuntu.com
+        id: 0C49F3730359A14518585931BC711F9BA15703C6
+        state: present
+    - name: Add Mongo repo
+      apt_repository:
+        repo: 'deb http://repo.mongodb.org/apt/ubuntu {{ansible_distribution_release}}/mongodb-org/3.6 multiverse'
+        state: present
+    - name: Install Mongo
+      apt:
+        name: mongodb-org
+        state: latest
+        update_cache: yes
+    become: yes
+    become_user: root
+    when: ansible_distribution == "Ubuntu"
+
+  - name: (CentOS) Install MongoDB
+    block:
+      - name: Create Mongo repo file
+        copy:
+          content: |
+            [mongodb-org-3.6]
+            name=MongoDB Repository
+            baseurl=https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/3.6/x86_64/
+            gpgcheck=1
+            enabled=1
+            gpgkey=https://www.mongodb.org/static/pgp/server-3.6.asc
+          dest: /etc/yum.repos.d/mongodb-org-3.6.repo
+      - name: Install Mongo
+        yum:
+          name: mongodb-org
+          state: present
+      - name: Run Mongo
+        service:
+          name: mongod
+          state: started
+          enabled: yes
+    become: yes
+    become_user: root
+    when: ansible_distribution == "CentOS"
+
   - name: Install the 'Development tools' package group
     yum:
       name: "@Development tools"
