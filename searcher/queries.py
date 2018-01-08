@@ -143,9 +143,12 @@ def search_entries(query, paginate=True, page=1):
         results = InvertedIndexEntry.objects.aggregate(
             *(base_aggregation + lookup_aggregation)
         )
-        total_count = next(InvertedIndexEntry.objects.aggregate(
-            *(base_aggregation + count_aggregation)
-        ))['count']
+        try:
+            total_count = next(InvertedIndexEntry.objects.aggregate(
+                *(base_aggregation + count_aggregation)
+            ))['count']
+        except StopIteration:
+            total_count = 0
 
         matching_entries = []
         matching_entry_weights = {}
