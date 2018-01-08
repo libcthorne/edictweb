@@ -26,7 +26,7 @@ def search_entries(query, paginate=True, page=1):
     query = normalize_query(query)
     if not query:
         search_terms = []
-        matching_entries = DictionaryEntry.objects.all()
+        matching_entries = DictionaryEntry.objects
         matching_entries = matching_entries.order_by('id')
         matching_entry_weights = None
     else:
