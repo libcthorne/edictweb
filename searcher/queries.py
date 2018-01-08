@@ -22,7 +22,28 @@ from importer.models import (
 from importer.util import normalize_query, normalize_word
 from . import const
 
+class PartialDocumentCollection:
+    def __init__(self, documents, offset, count):
+        self._documents = documents
+        self._offset = offset
+        self._count = count
+
+    def __getitem__(self, item):
+        if isinstance(item, slice):
+            item = slice(item.start-self._offset, item.stop-self._offset)
+        else:
+            item -= self._offset
+
+        return self._documents[item]
+
+    def count(self):
+        return self._count
+
 def search_entries(query, paginate=True, page=1):
+    page = max(page, 1)
+    limit = const.RESULTS_PER_PAGE
+    skip = (page-1)*limit
+
     query = normalize_query(query)
     if not query:
         search_terms = []
@@ -32,7 +53,7 @@ def search_entries(query, paginate=True, page=1):
     else:
         search_terms = set(normalize_word(word) for word in query.split(' '))
 
-        results = InvertedIndexEntry.objects.aggregate(
+        base_aggregation = [
             # Find all matches for each search term
             {
                 "$match": {
@@ -76,22 +97,67 @@ def search_entries(query, paginate=True, page=1):
                     "count": len(search_terms)
                 }
             },
+        ]
+        lookup_aggregation = [
+            # Only keep weight and _id
+            {
+                "$project": {
+                    "weight": 1
+                }
+            },
             # Sort by weight (descending)
             {
                 "$sort": {
-                    "weight": -1
+                    "weight": -1,
+                    "_id": 1
+                }
+            },
+            # Paginate
+            {
+                "$skip": skip
+            },
+            {
+                "$limit": limit
+            },
+            # Lookup matching entry documents
+            {
+                "$lookup": {
+                    "from": "dictionary_entry",
+                    "localField": "_id",
+                    "foreignField": "_id",
+                    "as": "dictionary_entry"
+                }
+            },
+            {
+                "$unwind": "$dictionary_entry"
+            },
+        ]
+        count_aggregation = [
+            {
+                "$group": {
+                    "_id": "$all_matches.dictionary_entry",
+                    "count": {"$sum": 1}
                 }
             }
+        ]
+        results = InvertedIndexEntry.objects.aggregate(
+            *(base_aggregation + lookup_aggregation)
         )
+        total_count = next(InvertedIndexEntry.objects.aggregate(
+            *(base_aggregation + count_aggregation)
+        ))['count']
 
-        matching_entry_ids = []
+        matching_entries = []
         matching_entry_weights = {}
         for result in results:
-            matching_entry_ids.append(result['_id'])
+            result['dictionary_entry']['id'] = result['_id']
+            del result['dictionary_entry']['_id']
+            matching_entries.append(
+                DictionaryEntry(**result['dictionary_entry'])
+            )
             matching_entry_weights[result['_id']] = result['weight']
 
-        matching_entries = DictionaryEntry.objects.\
-                           filter(id__in=matching_entry_ids)
+        matching_entries = PartialDocumentCollection(matching_entries, skip, total_count)
 
     if paginate:
         paginator = Paginator(matching_entries, per_page=const.RESULTS_PER_PAGE)
