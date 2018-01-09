@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.http import (
     Http404,
     HttpResponse,
@@ -27,6 +29,8 @@ class SearchView(View):
         if not form.is_valid():
             return HttpResponseBadRequest("Invalid form data")
 
+        query_start = datetime.now()
+
         sequence_number = request.GET.get('seq_no')
         if sequence_number is not None:
             try:
@@ -46,6 +50,8 @@ class SearchView(View):
                 page=request.GET.get('page'),
             )
             should_highlight = len(search_terms) > 0
+
+        query_end = datetime.now()
 
         if should_highlight:
             for matching_entry in matching_entries:
@@ -67,6 +73,7 @@ class SearchView(View):
             'total_matches': total_matches,
             'site_url': settings.SITE_URL,
             'debug': request.GET.get('debug'),
+            'query_time_ms': (query_end-query_start).total_seconds(),
         })
 
     def post(self, request):
