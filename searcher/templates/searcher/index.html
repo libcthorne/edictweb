@@ -16,7 +16,7 @@
 		</div>
 	</form>
 
-	<br/>
+	<div class="results-stats">Showing {{ paginated_matching_entries.start_index }}-{{ paginated_matching_entries.end_index }} of {{ total_matches }} entries</div>
 
 	{% for entry in paginated_matching_entries %}
 		<div class="form-control bg-faded">

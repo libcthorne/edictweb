@@ -2,3 +2,8 @@
   outline: none !important;
   box-shadow: none !important;
 }
+
+.results-stats {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
