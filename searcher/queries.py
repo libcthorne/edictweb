@@ -42,7 +42,7 @@ class PartialDocumentCollection:
 def search_entries(query, paginate=True, page=1):
     try:
         page = max(int(page), 1)
-    except ValueError:
+    except (TypeError, ValueError):
         page = 1
 
     limit = const.RESULTS_PER_PAGE

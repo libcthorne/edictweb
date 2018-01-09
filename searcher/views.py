@@ -41,15 +41,10 @@ class SearchView(View):
             total_matches = 1
             should_highlight = False
         else:
-            try:
-                page = int(request.GET.get('page'))
-            except (ValueError, TypeError):
-                page = 1
-
             matching_entries, search_terms, total_matches = queries.search_entries(
                 query=form.cleaned_data['query'],
                 paginate=True,
-                page=page,
+                page=request.GET.get('page'),
             )
             should_highlight = len(search_terms) > 0
 
