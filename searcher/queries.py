@@ -3,7 +3,6 @@ from collections import defaultdict, Counter
 
 from django.core.paginator import (
     EmptyPage,
-    PageNotAnInteger,
     Paginator,
 )
 from django.db.models import (
@@ -36,10 +35,13 @@ class PartialDocumentCollection:
 
         return self._documents[item]
 
+    def __len__(self):
+        return count
+
     def count(self):
         return self._count
 
-def search_entries(query, paginate=True, page=1):
+def search_entries(query, page=1):
     try:
         page = max(int(page), 1)
     except (TypeError, ValueError):
@@ -50,9 +52,16 @@ def search_entries(query, paginate=True, page=1):
 
     query = normalize_query(query)
     if not query:
+        total_matches = DictionaryEntry.objects.count()
+
+        matching_entries = list(
+            DictionaryEntry.objects.\
+            order_by('id').\
+            skip(skip).\
+            limit(limit)
+        )
+
         search_terms = []
-        matching_entries = DictionaryEntry.objects
-        matching_entries = matching_entries.order_by('id')
         matching_entry_weights = None
     else:
         search_terms = set(normalize_word(word) for word in query.split(' '))
@@ -148,11 +157,11 @@ def search_entries(query, paginate=True, page=1):
             *(base_aggregation + lookup_aggregation)
         )
         try:
-            total_count = next(InvertedIndexEntry.objects.aggregate(
+            total_matches = next(InvertedIndexEntry.objects.aggregate(
                 *(base_aggregation + count_aggregation)
             ))['count']
         except StopIteration:
-            total_count = 0
+            total_matches = 0
 
         matching_entries = []
         matching_entry_weights = {}
@@ -164,18 +173,13 @@ def search_entries(query, paginate=True, page=1):
             )
             matching_entry_weights[result['_id']] = result['weight']
 
-        matching_entries = PartialDocumentCollection(matching_entries, skip, total_count)
-
-    if paginate:
-        paginator = Paginator(matching_entries, per_page=const.RESULTS_PER_PAGE)
-        try:
-            matching_entries = paginator.page(page)
-        except (EmptyPage, PageNotAnInteger):
-            matching_entries = []
-
-        total_matches = paginator.count
-    else:
-        total_matches = matching_entries.count
+    # Wrap list with Django's Paginator
+    matching_entries = PartialDocumentCollection(matching_entries, skip, total_matches)
+    paginator = Paginator(matching_entries, per_page=const.RESULTS_PER_PAGE)
+    try:
+        matching_entries = paginator.page(page)
+    except EmptyPage:
+        matching_entries = paginator.page(paginator.num_pages)
 
     if matching_entry_weights:
         for matching_entry in matching_entries:

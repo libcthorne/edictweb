@@ -9,11 +9,11 @@ class DictionaryEntryList(APIView):
     def get(self, request, format=None):
         query = request.query_params.get('query', '')
         page = request.query_params.get('page', 1)
-        matching_entries, _, total_matches = search_entries(query, paginate=True, page=page)
+        matching_entries, _, total_matches = search_entries(query, page=page)
 
         serializer = DictionaryEntrySerializer(matching_entries, many=True)
         return Response({
             'count': total_matches,
             'results': serializer.data,
-            'has_next': False if matching_entries == [] else matching_entries.has_next(),
+            'has_next': matching_entries.has_next(),
         })
