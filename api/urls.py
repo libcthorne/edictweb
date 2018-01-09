@@ -1,11 +1,12 @@
 from django.conf.urls import include, url
-from rest_framework.routers import DefaultRouter
+from rest_framework.urlpatterns import format_suffix_patterns
 
 from . import views
 
-router = DefaultRouter()
-router.register(r'entries', views.DictionaryEntryViewSet, base_name='entry')
+app_name = 'api'
 
 urlpatterns = [
-    url(r'^', include(router.urls)),
+    url(r'^entries/$', views.DictionaryEntryList.as_view()),
 ]
+
+urlpatterns = format_suffix_patterns(urlpatterns)
