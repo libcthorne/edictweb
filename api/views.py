@@ -15,5 +15,5 @@ class DictionaryEntryList(APIView):
         return Response({
             'count': total_matches,
             'results': serializer.data,
-            'has_next': matching_entries.has_next(),
+            'has_next': False if matching_entries == [] else matching_entries.has_next(),
         })

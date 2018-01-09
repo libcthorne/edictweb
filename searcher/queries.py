@@ -40,7 +40,11 @@ class PartialDocumentCollection:
         return self._count
 
 def search_entries(query, paginate=True, page=1):
-    page = max(page, 1)
+    try:
+        page = max(int(page), 1)
+    except ValueError:
+        page = 1
+
     limit = const.RESULTS_PER_PAGE
     skip = (page-1)*limit
 
