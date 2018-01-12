@@ -1,11 +1,19 @@
 from django.test import TestCase
 from django.urls import reverse
+from mongoengine.connection import (
+    connect,
+    disconnect,
+)
 
 from importer.models import (
     DictionaryEntry,
     DictionaryEntryMatch,
     InvertedIndexEntry,
 )
+
+MONGO_TEST_DB_NAME = "tests_dictionary_index"
+disconnect() # clear default connection set by importer.models
+test_db = connect(MONGO_TEST_DB_NAME)
 
 def create_dog_dictionary_entry():
     return DictionaryEntry.objects.create(
@@ -24,6 +32,12 @@ def create_cat_dictionary_entry():
     )
 
 class SearchViewTests(TestCase):
+    def setUp(self):
+        super(SearchViewTests, self).setUp()
+
+        # Start with an empty database for each test
+        test_db.drop_database(MONGO_TEST_DB_NAME)
+
     def test_index_with_no_dictionary_entries(self):
         response = self.client.get(reverse("searcher:index"))
         self.assertEqual(response.status_code, 200)
