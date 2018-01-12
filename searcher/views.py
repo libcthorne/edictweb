@@ -1,10 +1,6 @@
 from datetime import datetime
 
-from django.http import (
-    Http404,
-    HttpResponse,
-    HttpResponseBadRequest,
-)
+from django.http import HttpResponseBadRequest
 from django.shortcuts import (
     redirect,
     render,
@@ -15,7 +11,6 @@ from mongoengine import connect
 
 from edictweb import settings
 from importer import const
-from importer.models import DictionaryEntry
 
 from . import (
     queries,
@@ -33,15 +28,9 @@ class SearchView(View):
 
         sequence_number = request.GET.get('seq_no')
         if sequence_number is not None:
-            try:
-                matching_entries = [
-                    DictionaryEntry.objects.get(
-                        sequence_number=sequence_number,
-                    )
-                ]
-            except DictionaryEntry.DoesNotExist:
-                raise Http404
-
+            matching_entries = queries.get_entry_by_sequence_number(
+                sequence_number
+            )
             total_matches = 1
             should_highlight = False
         else:

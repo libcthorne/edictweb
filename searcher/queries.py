@@ -12,6 +12,7 @@ from django.db.models import (
     Sum,
     Value,
 )
+from django.http import Http404
 from mongoengine.queryset import QuerySet
 
 from importer.models import (
@@ -40,6 +41,20 @@ class PartialDocumentCollection:
 
     def count(self):
         return self._count
+
+def get_entry_by_sequence_number(sequence_number):
+    try:
+        matching_entries = [
+            DictionaryEntry.objects.get(
+                sequence_number=sequence_number,
+            )
+        ]
+    except DictionaryEntry.DoesNotExist:
+        raise Http404
+
+    paginator = Paginator(matching_entries, per_page=1)
+
+    return paginator.page(1)
 
 def search_entries(query, page=1):
     try:
