@@ -73,7 +73,7 @@ class SearchView(View):
             'total_matches': total_matches,
             'site_url': settings.SITE_URL,
             'debug': request.GET.get('debug'),
-            'query_time_ms': (query_end-query_start).total_seconds(),
+            'query_seconds': (query_end-query_start).total_seconds(),
         })
 
     def post(self, request):
