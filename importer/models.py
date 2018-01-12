@@ -32,6 +32,11 @@ class DictionaryEntry(Document):
     meta_text = mongo_fields.StringField(max_length=2048)
     sequence_number = mongo_fields.IntField(min_value=0)
     frequency_rank = mongo_fields.IntField(min_value=0)
+    meta = {
+        'indexes': [
+            'sequence_number',
+        ]
+    }
 
     @property
     def meta_labels(self):
