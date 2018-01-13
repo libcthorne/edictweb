@@ -1,4 +1,4 @@
-from importer import const
+from importer import const, util
 
 def get_text_highlighted(text, description_separator, search_terms):
     text_highlighted = []
@@ -8,25 +8,19 @@ def get_text_highlighted(text, description_separator, search_terms):
         words = description.split(const.DESCRIPTION_WORD_SEPARATOR)
 
         for word_index, word in enumerate(words):
-            longest_match = 0
+            match_found = False
 
-            for search_term in search_terms:
-                match_start = word.lower().find(search_term)
+            normalized_word = util.normalize_word(word)
+            if normalized_word:
+                for search_term in search_terms:
+                    match_start = normalized_word.lower().find(search_term)
+                    if match_start == 0:
+                        match_found = True
+                        break
 
-                if match_start != 0:
-                    # Only check matches starting from first character
-                    # because these are all that are indexed
-                    continue
-
-                longest_match = max(longest_match, len(search_term))
-
-            if longest_match > 0:
-                # Highlight word up until end of longest match
-                text_highlighted.append((True, word[:longest_match]))
-
-                if longest_match < len(word):
-                    # Don't highlight remainder of word for partial matches
-                    text_highlighted.append((False, word[longest_match:]))
+            if match_found:
+                # Highlight word
+                text_highlighted.append((True, word))
             else:
                 # No match, don't highlight word
                 text_highlighted.append((False, word))
