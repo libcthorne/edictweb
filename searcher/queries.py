@@ -71,7 +71,7 @@ def search_entries(query, page=1):
 
         matching_entries = list(
             DictionaryEntry.objects.\
-            order_by('id').\
+            order_by('-common', '+frequency_rank', '+_id').\
             skip(skip).\
             limit(limit)
         )

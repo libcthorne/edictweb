@@ -154,8 +154,9 @@ class Command(BaseCommand):
                 jp_text=jp_text,
                 en_text=en_text,
                 meta_text=meta_text,
-                frequency_rank=min_frequency_rank,
                 sequence_number=sequence_number,
+                frequency_rank=min_frequency_rank,
+                common=min_frequency_rank is not None,
             )
             entry.save()
             self.stdout.write("[Request %d] Saved %d entry lines" % (import_request_id, entry_index+1))

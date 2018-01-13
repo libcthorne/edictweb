@@ -32,9 +32,11 @@ class DictionaryEntry(Document):
     meta_text = mongo_fields.StringField(max_length=2048)
     sequence_number = mongo_fields.IntField(min_value=0)
     frequency_rank = mongo_fields.IntField(min_value=0)
+    common = mongo_fields.BooleanField()
     meta = {
         'indexes': [
             'sequence_number',
+            ('-common', '+frequency_rank', '+_id'),
         ]
     }
 
