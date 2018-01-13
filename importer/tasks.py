@@ -106,7 +106,11 @@ def _build_index_entries(dictionary_entry, descriptions_collection):
 
                     # Common words should have larger weight
                     if dictionary_entry.frequency_rank:
-                        frequency_scale = max(51-dictionary_entry.frequency_rank, 1)/50
+                        frequency_scale = max(
+                            (const.MAX_FREQUENCY_RANK+1)
+                            - dictionary_entry.frequency_rank,
+                            1
+                        )/const.MAX_FREQUENCY_RANK
                         weight += 2*frequency_scale
 
                     if word_ngram not in entries or weight > entries[word_ngram]:

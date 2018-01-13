@@ -9,3 +9,6 @@ META_TEXT_SEPARATOR = ";"
 
 # e.g. to total
 DESCRIPTION_WORD_SEPARATOR = " "
+
+# Largest rank value for a dictionary entry
+MAX_FREQUENCY_RANK = 50

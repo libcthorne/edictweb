@@ -21,19 +21,27 @@ IMPORT_REQUEST_POLL_INTERVAL = 5
 FREQUENCY_STRING_REGEX = re.compile("nf[0-9][0-9]")
 
 def parse_frequency_rank(priority_elems):
+    min_rank = None
+
     for priority_elem in priority_elems:
         priority_str = priority_elem.text
+        rank = None
 
         if priority_str == "ichi1":
-            return 10
-        if priority_str == "ichi2":
-            return 20
+            rank = 10
+        elif priority_str == "ichi2":
+            rank = 20
+        elif FREQUENCY_STRING_REGEX.search(priority_str):
+            rank = int(priority_str[2:])
 
-        if not FREQUENCY_STRING_REGEX.search(priority_str):
-            # ignore priority strings that aren't about frequency
-            continue
+        if rank is not None:
+            if min_rank is not None:
+                min_rank = min(rank, min_rank)
+            else:
+                min_rank = rank
 
-        return int(priority_str[2:])
+    if min_rank is not None:
+        return min(min_rank, const.MAX_FREQUENCY_RANK)
 
 def parse_entry(elem):
     sequence_number = int(elem.find("ent_seq").text)
