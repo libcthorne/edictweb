@@ -20,8 +20,6 @@
 				Logged in as {{ request.user.username }}
 				{% if profile.display_name %}({{ profile.display_name }}){% endif %}
 				</a> / <a href="{% url 'accounts:logout' %}">Logout</a>
-			{% else %}
-				<a href="{% url 'accounts:login' %}">Login</a> / <a href="{% url 'accounts:register' %}">Register</a>
 			{% endif %}
 		</div>
 
