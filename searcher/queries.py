@@ -1,5 +1,5 @@
 import functools
-from collections import defaultdict, Counter
+from collections import defaultdict, Counter, OrderedDict
 
 from django.core.paginator import (
     EmptyPage,
@@ -135,10 +135,12 @@ def search_entries(query, page=1):
             },
             # Sort by weight (descending)
             {
-                "$sort": {
-                    "weight": -1,
-                    "_id": 1
-                }
+                # Use OrderedDict to ensure
+                # weight is primary sorting key
+                "$sort": OrderedDict([
+                    ("weight", -1),
+                    ("_id", 1),
+                ])
             },
             # Paginate
             {
