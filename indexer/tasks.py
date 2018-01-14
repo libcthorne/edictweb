@@ -30,7 +30,7 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
     try:
         dictionary_entry = DictionaryEntry.objects.get(id=dictionary_entry_id)
     except DictionaryEntry.DoesNotExist:
-        print("Unknown dictionary entry %d for index request" % dictionary_entry_id)
+        print("Unknown dictionary entry %s for index request" % dictionary_entry_id)
         return
 
     # Extract Japanese forms and English glosses from raw edict data

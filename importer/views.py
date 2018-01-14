@@ -1,4 +1,3 @@
-from django import forms
 from django.contrib.auth.decorators import user_passes_test
 from django.db import transaction
 from django.http import HttpResponse
@@ -27,11 +26,8 @@ class DictionaryImport(View):
                                  select_related('import_request').first()
 
         if pending_import_request.import_request:
-            # Import already running
-            current_entries_count = DictionaryEntry.objects.\
-                                    count()
-            progress = current_entries_count
-            return render(request, 'importer/progress.html', {'progress': progress})
+            # Import already runningt
+            return render(request, 'importer/progress.html')
         else:
             # No import currently running
             form = DictionaryUploadForm()
@@ -60,18 +56,3 @@ class DictionaryImport(View):
             pending_import_request.save()
 
             return redirect('importer:import')
-
-
-@method_decorator(user_is_staff, name='dispatch')
-class DictionaryImportCancel(View):
-    def get(self, request):
-        form = forms.Form()
-        return render(request, 'importer/cancel.html', {'form': form})
-
-    def post(self, request):
-        with transaction.atomic():
-            pending_import_request = PendingDictionaryImportRequest.objects.select_for_update().first()
-            if pending_import_request.import_request_id and pending_import_request.import_request.delete():
-                return redirect('importer:import')
-            else:
-                return HttpResponse("Import not running")
