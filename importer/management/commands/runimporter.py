@@ -1,9 +1,8 @@
 import time
 
 from django.core.management.base import BaseCommand
-from django.db import IntegrityError
+from mongoengine.errors import OperationError
 
-from importer.models import DictionaryImportRequest
 from importer import tasks
 
 IMPORT_REQUEST_POLL_INTERVAL = 5
@@ -18,7 +17,7 @@ class Command(BaseCommand):
             if import_request_id:
                 try:
                     tasks.process_import_request(import_request_id)
-                except (DictionaryImportRequest.DoesNotExist, IntegrityError) as e:
+                except OperationError:
                     self.stdout.write("[Request %d] Import request interrupted" % import_request_id)
             else:
                 self.stdout.write("No pending import request")

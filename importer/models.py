@@ -11,7 +11,7 @@ from mongoengine import (
 from . import const
 from .util import meta_info_to_label
 
-connect('dictionary_index')
+db_conn = connect('dictionary_index')
 
 class DictionaryImportRequest(models.Model):
     started = models.BooleanField(default=False)
@@ -33,6 +33,7 @@ class DictionaryEntry(Document):
     sequence_number = mongo_fields.IntField(min_value=0)
     frequency_rank = mongo_fields.IntField(min_value=0)
     common = mongo_fields.BooleanField()
+    import_request_id = mongo_fields.IntField(min_value=0)
     meta = {
         'indexes': [
             'sequence_number',
@@ -60,6 +61,7 @@ class DictionaryEntryMatch(EmbeddedDocument):
 class InvertedIndexEntry(Document):
     index_word_text = mongo_fields.StringField(max_length=256)
     matches = mongo_fields.EmbeddedDocumentListField(DictionaryEntryMatch)
+    import_request_id = mongo_fields.IntField(min_value=0)
     meta = {
         'indexes': [
             'index_word_text',

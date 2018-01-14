@@ -3,6 +3,7 @@ from datetime import datetime
 
 import django
 from celery import Celery
+from mongoengine.errors import OperationError
 
 from importer import const
 from importer.util import normalize_query, normalize_word
@@ -25,12 +26,15 @@ from importer.models import (
 
 app = Celery(__name__, broker='amqp://guest@localhost//')
 
+def cleanup_tasks():
+    app.control.purge()
+
 @app.task(autoretry_for=(Exception,))
 def index_dictionary_entry_by_id(dictionary_entry_id):
     try:
         dictionary_entry = DictionaryEntry.objects.get(id=dictionary_entry_id)
     except DictionaryEntry.DoesNotExist:
-        print("Unknown dictionary entry %d for index request" % dictionary_entry_id)
+        print("Unknown dictionary entry %s for index request" % dictionary_entry_id)
         return
 
     # Extract Japanese forms and English glosses from raw edict data
@@ -48,14 +52,23 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
     # Build index entries from en and jp text
     save_start = datetime.now()
     entries = _build_index_entries(dictionary_entry, [jp_text_descriptions, en_text_descriptions])
+
     for word_ngram, weight in entries.items():
-        InvertedIndexEntry.objects(index_word_text=word_ngram).update(
-            push__matches=DictionaryEntryMatch(
-                dictionary_entry=dictionary_entry,
-                weight=weight,
-            ),
-            upsert=True,
-        )
+        try:
+            InvertedIndexEntry.objects(
+                index_word_text=word_ngram,
+                import_request_id=dictionary_entry.import_request_id,
+            ).update(
+                push__matches=DictionaryEntryMatch(
+                    dictionary_entry=dictionary_entry,
+                    weight=weight,
+                ),
+                upsert=True,
+            )
+        except OperationError:
+            print("Import request interrupted")
+            return
+
     save_end = datetime.now()
 
     print("Saved {} index entries in {}".format(len(entries), save_end-save_start))

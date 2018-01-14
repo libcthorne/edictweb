@@ -17,6 +17,7 @@ from .models import (
     DictionaryImportRequest,
     PendingDictionaryImportRequest,
 )
+from .tasks import cancel_pending_import
 
 user_is_staff = user_passes_test(lambda u: u.is_staff, login_url='accounts:staff-login-prompt')
 
@@ -28,9 +29,14 @@ class DictionaryImport(View):
 
         if pending_import_request.import_request:
             # Import already running
-            current_entries_count = DictionaryEntry.objects.\
-                                    count()
-            progress = current_entries_count
+
+            current_entries_count = DictionaryEntry.objects.count()
+
+            if pending_import_request.import_request.started:
+                progress = current_entries_count
+            else:
+                progress = 0
+
             return render(request, 'importer/progress.html', {'progress': progress})
         else:
             # No import currently running
@@ -61,7 +67,6 @@ class DictionaryImport(View):
 
             return redirect('importer:import')
 
-
 @method_decorator(user_is_staff, name='dispatch')
 class DictionaryImportCancel(View):
     def get(self, request):
@@ -69,9 +74,5 @@ class DictionaryImportCancel(View):
         return render(request, 'importer/cancel.html', {'form': form})
 
     def post(self, request):
-        with transaction.atomic():
-            pending_import_request = PendingDictionaryImportRequest.objects.select_for_update().first()
-            if pending_import_request.import_request_id and pending_import_request.import_request.delete():
-                return redirect('importer:import')
-            else:
-                return HttpResponse("Import not running")
+        cancel_pending_import()
+        return redirect('importer:import')

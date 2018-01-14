@@ -2,20 +2,28 @@ import re
 from datetime import datetime
 from xml.etree.ElementTree import iterparse
 
+from django.db import transaction
+
 from importer import const
 from importer.models import (
+    db_conn,
     DictionaryEntry,
     DictionaryImportRequest,
     InvertedIndexEntry,
     PendingDictionaryImportRequest,
 )
-from indexer.tasks import index_dictionary_entry_by_id
+from indexer import tasks as indexer_tasks
 
 def get_pending_import_request_id():
     return PendingDictionaryImportRequest.objects.first().import_request_id
 
 def process_import_request(import_request_id):
+    set_collection_ownership(import_request_id)
+
     _mark_import_request_as_started(import_request_id)
+
+    print("[Request %d] Removing pending indexer tasks" % import_request_id)
+    indexer_tasks.cleanup_tasks()
 
     print("[Request %d] Deleting existing dictionary entries" % import_request_id)
     _remove_existing_entries()
@@ -23,6 +31,7 @@ def process_import_request(import_request_id):
     print("[Request %d] Starting dictionary file import" % import_request_id)
     import_start_time = datetime.now()
     saved_entries_count = _save_dictionary_entries(import_request_id)
+
     _mark_import_request_as_completed(import_request_id)
 
     import_finish_time = datetime.now()
@@ -32,6 +41,25 @@ def process_import_request(import_request_id):
         saved_entries_count,
         import_duration,
     ))
+
+def cancel_pending_import():
+    with transaction.atomic():
+        pending_import_request = PendingDictionaryImportRequest.objects.select_for_update().first()
+
+        if pending_import_request.import_request_id:
+            set_collection_ownership(0)
+            indexer_tasks.cleanup_tasks()
+            pending_import_request.import_request.delete()
+
+def set_collection_ownership(import_request_id):
+    db_conn.dictionary_index.command(
+        "collMod", "dictionary_entry",
+        validator={"import_request_id": {"$eq": import_request_id}}
+    )
+    db_conn.dictionary_index.command(
+        "collMod", "inverted_index_entry",
+        validator={"import_request_id": {"$eq": import_request_id}}
+    )
 
 def _mark_import_request_as_started(import_request_id):
     import_request = DictionaryImportRequest.objects.get(id=import_request_id)
@@ -155,12 +183,15 @@ def _save_dictionary_entries(import_request_id):
             sequence_number=sequence_number,
             frequency_rank=min_frequency_rank,
             common=min_frequency_rank is not None,
+            import_request_id=import_request_id,
         )
         entry.save()
         print("[Request %d] Saved %d entry lines" % (import_request_id, entry_index+1))
 
         # Add to index
-        index_dictionary_entry_by_id.apply_async(args=(str(entry.id),))
+        indexer_tasks.index_dictionary_entry_by_id.apply_async(
+            args=(str(entry.id),)
+        )
 
         # Log progress
         print("[Request %d] Progress: %d entries saved" % (import_request_id, entry_index+1))
