@@ -75,6 +75,6 @@ Vagrant.configure("2") do |config|
       "vagrant" => ["default"]
     }
 
-    ansible.playbook = "playbook-vagrant.yml"
+    ansible.playbook = "deploy/playbook-vagrant.yml"
   end
 end
