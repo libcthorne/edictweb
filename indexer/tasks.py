@@ -58,6 +58,10 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
         )
     save_end = datetime.now()
 
+    DictionaryEntry.objects(id=dictionary_entry_id).update(
+        indexed=True,
+    )
+
     print("Saved {} index entries in {}".format(len(entries), save_end-save_start))
 
 def _build_index_entries(dictionary_entry, descriptions_collection):

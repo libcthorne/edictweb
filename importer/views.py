@@ -26,8 +26,13 @@ class DictionaryImport(View):
                                  select_related('import_request').first()
 
         if pending_import_request.import_request:
-            # Import already runningt
-            return render(request, 'importer/progress.html')
+            return render(request, 'importer/progress.html', {
+                'message': "Import in progress",
+            })
+        elif DictionaryEntry.objects(indexed__ne=True).count():
+            return render(request, 'importer/progress.html', {
+                'message': "Indexer still running",
+            })
         else:
             # No import currently running
             form = DictionaryUploadForm()
@@ -42,6 +47,9 @@ class DictionaryImport(View):
             pending_import_request = PendingDictionaryImportRequest.objects.select_for_update().first()
             if pending_import_request.import_request_id:
                 return HttpResponse("Import already in progress")
+
+            if DictionaryEntry.objects(indexed__ne=True).count():
+                return HttpResponse("Indexing in progress")
 
             source_file = request.FILES['dictionary_file']
 
