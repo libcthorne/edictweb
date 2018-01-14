@@ -20,8 +20,6 @@ def get_pending_import_request_id():
 def process_import_request(import_request_id):
     set_collection_ownership(import_request_id)
 
-    _mark_import_request_as_started(import_request_id)
-
     print("[Request %d] Removing pending indexer tasks" % import_request_id)
     indexer_tasks.cleanup_tasks()
 
@@ -29,9 +27,9 @@ def process_import_request(import_request_id):
     _remove_existing_entries()
 
     print("[Request %d] Starting dictionary file import" % import_request_id)
+    _mark_import_request_as_started(import_request_id)
     import_start_time = datetime.now()
     saved_entries_count = _save_dictionary_entries(import_request_id)
-
     _mark_import_request_as_completed(import_request_id)
 
     import_finish_time = datetime.now()
