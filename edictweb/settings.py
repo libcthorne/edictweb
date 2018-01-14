@@ -222,3 +222,8 @@ LOGGING = {
         },
     },
 }
+
+
+# Mongo
+
+MONGO_TEST_DB_NAME = "tests_dictionary_index"

@@ -31,63 +31,76 @@ def create_cat_dictionary_entry():
         sequence_number=101,
     )
 
-class SearchViewTests(TestCase):
+class APISearchViewTests(TestCase):
     def setUp(self):
-        super(SearchViewTests, self).setUp()
+        super(APISearchViewTests, self).setUp()
 
         # Start with an empty database for each test
         test_db.drop_database(settings.MONGO_TEST_DB_NAME)
 
     def test_index_with_no_dictionary_entries(self):
-        response = self.client.get(reverse("searcher:index"))
+        response = self.client.get(reverse("api:entries"))
         self.assertEqual(response.status_code, 200)
-
-        c = response.context
-        self.assertEqual(c['should_highlight'], False)
-        self.assertEqual(c['total_matches'], 0)
+        self.assertEqual(
+            response.json(),
+            {
+                "count": 0,
+                "has_next": False,
+                "results": [],
+            },
+        )
 
     def test_index_with_dictionary_entries(self):
         entry1 = create_dog_dictionary_entry()
         entry2 = create_cat_dictionary_entry()
 
-        response = self.client.get(reverse("searcher:index"))
+        response = self.client.get(reverse("api:entries"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "猫")
-        self.assertContains(response, "犬")
-
-        c = response.context
-        self.assertEqual(c['should_highlight'], False)
-        self.assertEqual(c['total_matches'], 2)
-
-    def test_invalid_sequence_lookup(self):
-        response = self.client.get(reverse("searcher:index"), {'seq_no': 100})
-        self.assertEqual(response.status_code, 404)
-
-    def test_valid_sequence_lookup(self):
-        entry1 = create_dog_dictionary_entry()
-        entry2 = create_cat_dictionary_entry()
-
-        response = self.client.get(reverse("searcher:index"), {'seq_no': 100})
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "犬")
-        self.assertNotContains(response, "猫")
-
-        c = response.context
-        self.assertEqual(c['should_highlight'], False)
-        self.assertEqual(c['total_matches'], 1)
+        self.assertEqual(
+            response.json(),
+            {
+                "count": 2,
+                "has_next": False,
+                "results": [
+                    {
+                        "en_text": "dog",
+                        "jp_text": "犬",
+                        "sequence_number": 100,
+                    },
+                    {
+                        "en_text": "cat",
+                        "jp_text": "猫",
+                        "sequence_number": 101,
+                    }
+                ],
+            },
+        )
 
     def test_empty_query(self):
         entry1 = create_dog_dictionary_entry()
         entry2 = create_cat_dictionary_entry()
 
-        response = self.client.get(reverse("searcher:index"), {'query': ""})
+        response = self.client.get(reverse("api:entries"), {'query': ""})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "犬")
-        self.assertContains(response, "猫")
-
-        c = response.context
-        self.assertEqual(c['should_highlight'], False)
-        self.assertEqual(c['total_matches'], 2)
+        self.assertEqual(
+            response.json(),
+            {
+                "count": 2,
+                "has_next": False,
+                "results": [
+                    {
+                        "en_text": "dog",
+                        "jp_text": "犬",
+                        "sequence_number": 100,
+                    },
+                    {
+                        "en_text": "cat",
+                        "jp_text": "猫",
+                        "sequence_number": 101,
+                    }
+                ],
+            },
+        )
 
     def test_valid_query(self):
         entry1 = create_dog_dictionary_entry()
@@ -113,15 +126,19 @@ class SearchViewTests(TestCase):
             ]
         )
 
-        response = self.client.get(reverse("searcher:index"), {'query': "dog"})
+        response = self.client.get(reverse("api:entries"), {'query': "dog"})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "犬")
-        self.assertNotContains(response, "猫")
-
-        c = response.context
-        self.assertEqual(c['should_highlight'], True)
-        self.assertEqual(c['total_matches'], 1)
-
-    def test_post_redirect(self):
-        response = self.client.post(reverse("searcher:index"), {'query': "dog"}, follow=True)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "count": 1,
+                "has_next": False,
+                "results": [
+                    {
+                        "en_text": "dog",
+                        "jp_text": "犬",
+                        "sequence_number": 100,
+                    },
+                ],
+            },
+        )
