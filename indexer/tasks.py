@@ -5,7 +5,7 @@ import django
 from celery import Celery
 
 from importer import const
-from .util import normalize_query, normalize_word
+from importer.util import normalize_query, normalize_word
 
 ################################################################
 
@@ -17,7 +17,7 @@ django.setup()
 
 ################################################################
 
-from .models import (
+from importer.models import (
     DictionaryEntry,
     DictionaryEntryMatch,
     InvertedIndexEntry,

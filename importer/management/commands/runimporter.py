@@ -13,7 +13,7 @@ from importer.models import (
     InvertedIndexEntry,
     PendingDictionaryImportRequest,
 )
-from importer.tasks import index_dictionary_entry_by_id
+from indexer.tasks import index_dictionary_entry_by_id
 
 IMPORT_REQUEST_POLL_INTERVAL = 5
 
