@@ -64,6 +64,6 @@ class InvertedIndexEntry(Document):
     import_request_id = mongo_fields.IntField(min_value=0)
     meta = {
         'indexes': [
-            'index_word_text',
+            ('index_word_text', 'import_request_id'),
         ]
     }
