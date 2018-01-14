@@ -15,7 +15,6 @@ from importer.models import (
 )
 from importer.tasks import index_dictionary_entry_by_id
 
-DICTIONARY_FILE = 'JMdict_e'
 IMPORT_REQUEST_POLL_INTERVAL = 5
 
 FREQUENCY_STRING_REGEX = re.compile("nf[0-9][0-9]")
@@ -130,7 +129,7 @@ class Command(BaseCommand):
 
         import_start_time = datetime.now()
 
-        context = iterparse(DICTIONARY_FILE, events=("start", "end"))
+        context = iterparse(const.DICTIONARY_FILE, events=("start", "end"))
         context = iter(context)
         _, root = next(context)
         entry_index = 0
