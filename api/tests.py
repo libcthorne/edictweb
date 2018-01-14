@@ -19,7 +19,7 @@ def create_dog_dictionary_entry():
     return DictionaryEntry.objects.create(
         jp_text="犬",
         en_text="dog",
-        meta_text="(n) (uk) {animal}",
+        meta_text="n;uk;animal",
         sequence_number=100,
     )
 
@@ -27,7 +27,7 @@ def create_cat_dictionary_entry():
     return DictionaryEntry.objects.create(
         jp_text="猫",
         en_text="cat",
-        meta_text="(n) {animal}",
+        meta_text="n;animal",
         sequence_number=101,
     )
 
