@@ -95,97 +95,98 @@ def parse_entry(elem):
 
     return sequence_number, en_text, jp_text, meta_text, min_frequency_rank
 
+def process_import_request(import_request_id):
+    # Mark request as started
+    import_request = DictionaryImportRequest.objects.get(id=import_request_id)
+    import_request.started = True
+    import_request.save()
+
+    # Remove existing dictionary entries
+    print("[Request %d] Deleting existing dictionary entries" % import_request_id)
+    DictionaryEntry.objects.all().delete()
+    InvertedIndexEntry.objects.all().delete()
+
+    print("[Request %d] Starting dictionary file import" % import_request_id)
+
+    import_start_time = datetime.now()
+
+    context = iterparse(const.DICTIONARY_FILE, events=("start", "end"))
+    context = iter(context)
+    _, root = next(context)
+    entry_index = 0
+    for event, elem in context:
+        if event == "start":
+            continue
+
+        if elem.tag != "entry":
+            continue
+
+        (
+            sequence_number,
+            en_text,
+            jp_text,
+            meta_text,
+            min_frequency_rank,
+        ) = parse_entry(elem)
+
+        # Create and save new entry
+        entry = DictionaryEntry(
+            jp_text=jp_text,
+            en_text=en_text,
+            meta_text=meta_text,
+            sequence_number=sequence_number,
+            frequency_rank=min_frequency_rank,
+            common=min_frequency_rank is not None,
+        )
+        entry.save()
+        print("[Request %d] Saved %d entry lines" % (import_request_id, entry_index+1))
+
+        # Add to index
+        index_dictionary_entry_by_id.apply_async(args=(str(entry.id),))
+
+        # Log progress
+        print("[Request %d] Progress: %d entries saved" % (import_request_id, entry_index+1))
+
+        # Remove entry from root tree to keep memory usage low
+        root.clear()
+
+        entry_index += 1
+
+    # Request finished, mark as completed
+    import_request = DictionaryImportRequest.objects.get(id=import_request_id)
+    import_request.completed = True
+    import_request.save()
+
+    # Unmark import request as pending
+    pending_import_request = PendingDictionaryImportRequest.objects.get(import_request=import_request)
+    pending_import_request.import_request = None
+    pending_import_request.save()
+
+    import_finish_time = datetime.now()
+    import_duration = import_finish_time - import_start_time
+
+    print("[Request %d] Finished dictionary file import in (entries: %d, duration: %s)" % (
+        import_request_id,
+        entry_index,
+        import_duration,
+    ))
+
+def get_pending_import_request_id():
+    return PendingDictionaryImportRequest.objects.first().import_request_id
+
 class Command(BaseCommand):
     help = 'Polls for and processes dictionary import requests'
 
     def handle(self, *args, **kwargs):
         while True:
-            import_request_id = self.get_pending_import_request_id()
+            import_request_id = get_pending_import_request_id()
+
             if import_request_id:
                 try:
-                    self.process_import_request(import_request_id)
+                    process_import_request(import_request_id)
                 except (DictionaryImportRequest.DoesNotExist, IntegrityError) as e:
                     self.stdout.write("[Request %d] Import request interrupted" % import_request_id)
             else:
                 self.stdout.write("No pending import request")
 
             time.sleep(IMPORT_REQUEST_POLL_INTERVAL)
-
-    def get_pending_import_request_id(self):
-        return PendingDictionaryImportRequest.objects.first().import_request_id
-
-    def process_import_request(self, import_request_id):
-        # Mark request as started
-        import_request = DictionaryImportRequest.objects.get(id=import_request_id)
-        import_request.started = True
-        import_request.save()
-
-        # Remove existing dictionary entries
-        self.stdout.write("[Request %d] Deleting existing dictionary entries" % import_request_id)
-        DictionaryEntry.objects.all().delete()
-        InvertedIndexEntry.objects.all().delete()
-
-        self.stdout.write("[Request %d] Starting dictionary file import" % import_request_id)
-
-        import_start_time = datetime.now()
-
-        context = iterparse(const.DICTIONARY_FILE, events=("start", "end"))
-        context = iter(context)
-        _, root = next(context)
-        entry_index = 0
-        for event, elem in context:
-            if event == "start":
-                continue
-
-            if elem.tag != "entry":
-                continue
-
-            (
-                sequence_number,
-                en_text,
-                jp_text,
-                meta_text,
-                min_frequency_rank,
-            ) = parse_entry(elem)
-
-            # Create and save new entry
-            entry = DictionaryEntry(
-                jp_text=jp_text,
-                en_text=en_text,
-                meta_text=meta_text,
-                sequence_number=sequence_number,
-                frequency_rank=min_frequency_rank,
-                common=min_frequency_rank is not None,
-            )
-            entry.save()
-            self.stdout.write("[Request %d] Saved %d entry lines" % (import_request_id, entry_index+1))
-
-            # Add to index
-            index_dictionary_entry_by_id.apply_async(args=(str(entry.id),))
-
-            # Log progress
-            self.stdout.write("[Request %d] Progress: %d entries saved" % (import_request_id, entry_index+1))
-
-            # Remove entry from root tree to keep memory usage low
-            root.clear()
-
-            entry_index += 1
-
-        # Request finished, mark as completed
-        import_request = DictionaryImportRequest.objects.get(id=import_request_id)
-        import_request.completed = True
-        import_request.save()
-
-        # Unmark import request as pending
-        pending_import_request = PendingDictionaryImportRequest.objects.get(import_request=import_request)
-        pending_import_request.import_request = None
-        pending_import_request.save()
-
-        import_finish_time = datetime.now()
-        import_duration = import_finish_time - import_start_time
-
-        self.stdout.write("[Request %d] Finished dictionary file import in (entries: %d, duration: %s)" % (
-            import_request_id,
-            entry_index,
-            import_duration,
-        ))
