@@ -18,8 +18,6 @@ def get_pending_import_request_id():
     return PendingDictionaryImportRequest.objects.first().import_request_id
 
 def process_import_request(import_request_id):
-    set_collection_ownership(import_request_id)
-
     print("[Request %d] Removing pending indexer tasks" % import_request_id)
     indexer_tasks.cleanup_tasks()
 
@@ -39,25 +37,6 @@ def process_import_request(import_request_id):
         saved_entries_count,
         import_duration,
     ))
-
-def cancel_pending_import():
-    with transaction.atomic():
-        pending_import_request = PendingDictionaryImportRequest.objects.select_for_update().first()
-
-        if pending_import_request.import_request_id:
-            set_collection_ownership(0)
-            indexer_tasks.cleanup_tasks()
-            pending_import_request.import_request.delete()
-
-def set_collection_ownership(import_request_id):
-    db_conn.dictionary_index.command(
-        "collMod", "dictionary_entry",
-        validator={"import_request_id": {"$eq": import_request_id}}
-    )
-    db_conn.dictionary_index.command(
-        "collMod", "inverted_index_entry",
-        validator={"import_request_id": {"$eq": import_request_id}}
-    )
 
 def _mark_import_request_as_started(import_request_id):
     import_request = DictionaryImportRequest.objects.get(id=import_request_id)

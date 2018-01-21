@@ -17,7 +17,6 @@ from .models import (
     DictionaryImportRequest,
     PendingDictionaryImportRequest,
 )
-from .tasks import cancel_pending_import
 
 user_is_staff = user_passes_test(lambda u: u.is_staff, login_url='accounts:staff-login-prompt')
 
@@ -66,13 +65,3 @@ class DictionaryImport(View):
             pending_import_request.save()
 
             return redirect('importer:import')
-
-@method_decorator(user_is_staff, name='dispatch')
-class DictionaryImportCancel(View):
-    def get(self, request):
-        form = forms.Form()
-        return render(request, 'importer/cancel.html', {'form': form})
-
-    def post(self, request):
-        cancel_pending_import()
-        return redirect('importer:import')
