@@ -3,7 +3,6 @@ from datetime import datetime
 
 import django
 from celery import Celery
-from mongoengine.errors import OperationError
 
 from importer import const
 from importer.util import normalize_query, normalize_word
@@ -54,20 +53,16 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
     entries = _build_index_entries(dictionary_entry, [jp_text_descriptions, en_text_descriptions])
 
     for word_ngram, weight in entries.items():
-        try:
-            InvertedIndexEntry.objects(
-                index_word_text=word_ngram,
-                import_request_id=dictionary_entry.import_request_id,
-            ).update(
-                push__matches=DictionaryEntryMatch(
-                    dictionary_entry=dictionary_entry,
-                    weight=weight,
-                ),
-                upsert=True,
-            )
-        except OperationError:
-            print("Import request interrupted")
-            return
+        InvertedIndexEntry.objects(
+            index_word_text=word_ngram,
+            import_request_id=dictionary_entry.import_request_id,
+        ).update(
+            push__matches=DictionaryEntryMatch(
+                dictionary_entry=dictionary_entry,
+                weight=weight,
+            ),
+            upsert=True,
+        )
 
     save_end = datetime.now()
 
