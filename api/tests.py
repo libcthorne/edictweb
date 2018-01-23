@@ -1,26 +1,27 @@
 from django.test import TestCase
 from django.urls import reverse
-from mongoengine.connection import (
-    connect,
-    disconnect,
-)
 
 from edictweb import settings
 from importer.models import (
     DictionaryEntry,
-    DictionaryEntryMatch,
+    DictionaryImportRequest,
     InvertedIndexEntry,
 )
 
-disconnect() # clear default connection set by importer.models
-test_db = connect(settings.MONGO_TEST_DB_NAME)
+def create_stub_import_request():
+    return DictionaryImportRequest.objects.create(
+        started=True,
+        completed=True,
+    )
 
 def create_dog_dictionary_entry():
     return DictionaryEntry.objects.create(
         jp_text="犬",
         en_text="dog",
         meta_text="n;uk;animal",
+        common=False,
         sequence_number=100,
+        source_import_request=create_stub_import_request(),
     )
 
 def create_cat_dictionary_entry():
@@ -28,16 +29,12 @@ def create_cat_dictionary_entry():
         jp_text="猫",
         en_text="cat",
         meta_text="n;animal",
+        common=True,
         sequence_number=101,
+        source_import_request=create_stub_import_request(),
     )
 
 class APISearchViewTests(TestCase):
-    def setUp(self):
-        super(APISearchViewTests, self).setUp()
-
-        # Start with an empty database for each test
-        test_db.drop_database(settings.MONGO_TEST_DB_NAME)
-
     def test_index_with_no_dictionary_entries(self):
         response = self.client.get(reverse("api:entries"))
         self.assertEqual(response.status_code, 200)
@@ -63,15 +60,15 @@ class APISearchViewTests(TestCase):
                 "has_next": False,
                 "results": [
                     {
+                        "en_text": "cat",
+                        "jp_text": "猫",
+                        "sequence_number": 101,
+                    },
+                    {
                         "en_text": "dog",
                         "jp_text": "犬",
                         "sequence_number": 100,
                     },
-                    {
-                        "en_text": "cat",
-                        "jp_text": "猫",
-                        "sequence_number": 101,
-                    }
                 ],
             },
         )
@@ -89,15 +86,15 @@ class APISearchViewTests(TestCase):
                 "has_next": False,
                 "results": [
                     {
+                        "en_text": "cat",
+                        "jp_text": "猫",
+                        "sequence_number": 101,
+                    },
+                    {
                         "en_text": "dog",
                         "jp_text": "犬",
                         "sequence_number": 100,
                     },
-                    {
-                        "en_text": "cat",
-                        "jp_text": "猫",
-                        "sequence_number": 101,
-                    }
                 ],
             },
         )
@@ -108,22 +105,14 @@ class APISearchViewTests(TestCase):
 
         InvertedIndexEntry.objects.create(
             index_word_text="dog",
-            matches=[
-                DictionaryEntryMatch(
-                    dictionary_entry=entry1,
-                    weight=0.5,
-                )
-            ]
+            dictionary_entry=entry1,
+            weight=0.5,
         )
 
         InvertedIndexEntry.objects.create(
             index_word_text="cat",
-            matches=[
-                DictionaryEntryMatch(
-                    dictionary_entry=entry2,
-                    weight=0.5,
-                )
-            ]
+            dictionary_entry=entry2,
+            weight=0.5,
         )
 
         response = self.client.get(reverse("api:entries"), {'query': "dog"})

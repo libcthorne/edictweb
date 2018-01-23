@@ -7,7 +7,6 @@ from django.shortcuts import (
     reverse,
 )
 from django.views import View
-from mongoengine import connect
 
 from edictweb import settings
 from importer import const

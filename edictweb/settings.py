@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'django_extensions',
     'rest_framework',
-    'rest_framework_mongoengine',
 ]
 
 MIDDLEWARE = [
@@ -222,8 +221,3 @@ LOGGING = {
         },
     },
 }
-
-
-# Mongo
-
-MONGO_TEST_DB_NAME = "tests_dictionary_index"

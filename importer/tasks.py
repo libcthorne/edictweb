@@ -6,10 +6,8 @@ from django.db import transaction
 
 from importer import const
 from importer.models import (
-    db_conn,
     DictionaryEntry,
     DictionaryImportRequest,
-    InvertedIndexEntry,
     PendingDictionaryImportRequest,
 )
 from indexer import tasks as indexer_tasks
@@ -18,6 +16,8 @@ def get_pending_import_request_id():
     return PendingDictionaryImportRequest.objects.first().import_request_id
 
 def process_import_request(import_request_id):
+    import_request = DictionaryImportRequest.objects.get(id=import_request_id)
+
     print("[Request %d] Removing pending indexer tasks" % import_request_id)
     indexer_tasks.cleanup_tasks()
 
@@ -25,10 +25,10 @@ def process_import_request(import_request_id):
     _remove_existing_entries()
 
     print("[Request %d] Starting dictionary file import" % import_request_id)
-    _mark_import_request_as_started(import_request_id)
+    _mark_import_request_as_started(import_request)
     import_start_time = datetime.now()
-    saved_entries_count = _save_dictionary_entries(import_request_id)
-    _mark_import_request_as_completed(import_request_id)
+    saved_entries_count = _save_dictionary_entries(import_request)
+    _mark_import_request_as_completed(import_request)
 
     import_finish_time = datetime.now()
     import_duration = import_finish_time - import_start_time
@@ -38,13 +38,11 @@ def process_import_request(import_request_id):
         import_duration,
     ))
 
-def _mark_import_request_as_started(import_request_id):
-    import_request = DictionaryImportRequest.objects.get(id=import_request_id)
+def _mark_import_request_as_started(import_request):
     import_request.started = True
     import_request.save()
 
-def _mark_import_request_as_completed(import_request_id):
-    import_request = DictionaryImportRequest.objects.get(id=import_request_id)
+def _mark_import_request_as_completed(import_request):
     import_request.completed = True
     import_request.save()
 
@@ -54,7 +52,6 @@ def _mark_import_request_as_completed(import_request_id):
 
 def _remove_existing_entries():
     DictionaryEntry.objects.all().delete()
-    InvertedIndexEntry.objects.all().delete()
 
 def _parse_frequency_rank(priority_elems):
     min_rank = None
@@ -132,7 +129,7 @@ def _parse_entry(elem):
 
     return sequence_number, en_text, jp_text, meta_text, min_frequency_rank
 
-def _save_dictionary_entries(import_request_id):
+def _save_dictionary_entries(import_request):
     context = iterparse(const.DICTIONARY_FILE, events=("start", "end"))
     context = iter(context)
     _, root = next(context)
@@ -160,10 +157,10 @@ def _save_dictionary_entries(import_request_id):
             sequence_number=sequence_number,
             frequency_rank=min_frequency_rank,
             common=min_frequency_rank is not None,
-            import_request_id=import_request_id,
+            source_import_request=import_request,
         )
         entry.save()
-        print("[Request %d] Saved %d entry lines" % (import_request_id, entry_index+1))
+        print("[Request %d] Saved %d entry lines" % (import_request.id, entry_index+1))
 
         # Add to index
         indexer_tasks.index_dictionary_entry_by_id.apply_async(
@@ -171,7 +168,7 @@ def _save_dictionary_entries(import_request_id):
         )
 
         # Log progress
-        print("[Request %d] Progress: %d entries saved" % (import_request_id, entry_index+1))
+        print("[Request %d] Progress: %d entries saved" % (import_request.id, entry_index+1))
 
         # Remove entry from root tree to keep memory usage low
         root.clear()

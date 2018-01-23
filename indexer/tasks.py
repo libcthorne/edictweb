@@ -19,7 +19,6 @@ django.setup()
 
 from importer.models import (
     DictionaryEntry,
-    DictionaryEntryMatch,
     InvertedIndexEntry,
 )
 
@@ -51,19 +50,7 @@ def index_dictionary_entry_by_id(dictionary_entry_id):
     # Build index entries from en and jp text
     save_start = datetime.now()
     entries = _build_index_entries(dictionary_entry, [jp_text_descriptions, en_text_descriptions])
-
-    for word_ngram, weight in entries.items():
-        InvertedIndexEntry.objects(
-            index_word_text=word_ngram,
-            import_request_id=dictionary_entry.import_request_id,
-        ).update(
-            push__matches=DictionaryEntryMatch(
-                dictionary_entry=dictionary_entry,
-                weight=weight,
-            ),
-            upsert=True,
-        )
-
+    InvertedIndexEntry.objects.bulk_create(entries)
     save_end = datetime.now()
 
     print("Saved {} index entries in {}".format(len(entries), save_end-save_start))
@@ -121,7 +108,11 @@ def _build_index_entries(dictionary_entry, descriptions_collection):
                         )/const.MAX_FREQUENCY_RANK
                         weight += 2*frequency_scale
 
-                    if word_ngram not in entries or weight > entries[word_ngram]:
-                        entries[word_ngram] = weight
+                    if word_ngram not in entries or weight > entries[word_ngram].weight:
+                        entries[word_ngram] = InvertedIndexEntry(
+                            index_word_text=word_ngram,
+                            dictionary_entry=dictionary_entry,
+                            weight=weight,
+                        )
 
-    return entries
+    return list(entries.values())
