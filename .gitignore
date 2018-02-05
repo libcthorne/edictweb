@@ -4,7 +4,7 @@ _static
 
 # Ansible
 playbook*.retry
-group_vars/production
+deploy/group_vars/production
 
 # Vagrant
 /.vagrant
